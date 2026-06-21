@@ -53,7 +53,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const Icon(Icons.insights_rounded, color: AppColors.accent, size: 28),
             const SizedBox(width: 8),
             Text(
-              'RankeRating',
+              'RankeIt',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w800,
                 letterSpacing: 0.8,

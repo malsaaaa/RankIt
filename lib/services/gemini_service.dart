@@ -34,7 +34,7 @@ class GeminiService {
       }).join('\n');
 
       final prompt = """
-You are an expert pop-culture and ranking data analyst for RankeRating, a community aggregation platform.
+You are an expert pop-culture and ranking data analyst for RankeIt, a community aggregation platform.
 Analyze the following community ranking leaderboard data:
 
 Topic: "$listTitle"

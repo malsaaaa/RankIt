@@ -107,7 +107,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'RankeRating',
+                      'RankeIt',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontSize: 32,
                         letterSpacing: 1.5,

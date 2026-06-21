@@ -25,18 +25,18 @@ void main() async {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => RankingProvider()),
       ],
-      child: const RankeRatingApp(),
+      child: const RankeItApp(),
     ),
   );
 }
 
-class RankeRatingApp extends StatelessWidget {
-  const RankeRatingApp({super.key});
+class RankeItApp extends StatelessWidget {
+  const RankeItApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'RankeRating',
+      title: 'RankeIt',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
       home: const AuthCheckWrapper(),
