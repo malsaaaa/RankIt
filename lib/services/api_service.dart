@@ -95,7 +95,7 @@ class ApiService {
     }
 
     final requestBody = {
-      "user_id": 1, // sementara hardcode untuk testing
+      "user_id": int.parse(userId),
       "topic_id": int.parse(topicId),
       "rankings": rankings,
     };
