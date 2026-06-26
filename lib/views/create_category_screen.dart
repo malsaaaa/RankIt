@@ -2,8 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-import '../providers/auth_provider.dart';
 import '../providers/ranking_provider.dart';
+import '../services/cloudinary_service.dart';
 import '../theme/app_theme.dart';
 
 class CreateCategoryScreen extends StatefulWidget {
@@ -88,36 +88,29 @@ class _CreateCategoryScreenState extends State<CreateCategoryScreen> {
 
   void _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final rankingProvider = Provider.of<RankingProvider>(context, listen: false);
-    
-    if (authProvider.user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("You must be logged in to create categories."),
-          backgroundColor: AppColors.error,
-        ),
-      );
-      return;
-    }
 
     setState(() {
       _localLoading = true;
     });
 
     try {
-      await rankingProvider.createCategory(
-        name: _nameController.text.trim(),
-        description: _descriptionController.text.trim(),
-        imageFile: _imageFile,
-        userId: authProvider.user!.id,
-      );
+      // Upload image to Cloudinary first (if selected), then send URL to Laravel
+      String? imageUrl;
+      if (_imageFile != null) {
+        final cloudinary = CloudinaryService();
+        imageUrl = await cloudinary.uploadImage(_imageFile!);
+      }
+
+      await context.read<RankingProvider>().createCategory(
+            name: _nameController.text.trim(),
+            description: _descriptionController.text.trim(),
+            imageUrl: imageUrl,
+          );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text("Category created successfully!"),
+            content: Text('Category created successfully'),
             backgroundColor: AppColors.success,
           ),
         );
@@ -125,9 +118,11 @@ class _CreateCategoryScreenState extends State<CreateCategoryScreen> {
       }
     } catch (e) {
       if (mounted) {
+        // Strip the "Exception: " prefix from the thrown error
+        final msg = e.toString().replaceFirst('Exception: ', '');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Failed to create category: $e"),
+            content: Text(msg),
             backgroundColor: AppColors.error,
           ),
         );

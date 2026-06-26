@@ -56,27 +56,57 @@ class RankingProvider extends ChangeNotifier {
 
   Future<void> createCategory({
     required String name,
-    required String description,
-    required File? imageFile,
-    required String userId,
+    String? description,
+    String? imageUrl,
   }) async {
     _setLoading(true);
     _setError(null);
     try {
-      String? imageUrl;
-      if (imageFile != null) {
-        imageUrl = await _cloudinaryService.uploadImage(imageFile);
-      }
-      final newCat = await _dbService.createCategory(
-        name,
-        description,
-        imageUrl,
-        userId,
+      await _apiService.createCategory(
+        name: name,
+        description: description,
+        imageUrl: imageUrl,
       );
-      _categories.insert(0, newCat);
-      _setLoading(false);
+      // Reload from API so the list stays in sync with the database
+      await loadCategories();
     } catch (e) {
       _setError("Failed to create category: $e");
+      _setLoading(false);
+      rethrow;
+    }
+  }
+
+  Future<void> updateCategory({
+    required String id,
+    required String name,
+    String? description,
+    String? imageUrl,
+  }) async {
+    _setLoading(true);
+    _setError(null);
+    try {
+      await _apiService.updateCategory(
+        id: id,
+        name: name,
+        description: description,
+        imageUrl: imageUrl,
+      );
+      await loadCategories();
+    } catch (e) {
+      _setError("Failed to update category: $e");
+      _setLoading(false);
+      rethrow;
+    }
+  }
+
+  Future<void> deleteCategory(String id) async {
+    _setLoading(true);
+    _setError(null);
+    try {
+      await _apiService.deleteCategory(id);
+      await loadCategories();
+    } catch (e) {
+      _setError("Failed to delete category: $e");
       _setLoading(false);
       rethrow;
     }
