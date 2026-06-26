@@ -30,7 +30,10 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
   }
 
   void _loadItems() async {
-    final rankingProvider = Provider.of<RankingProvider>(context, listen: false);
+    final rankingProvider = Provider.of<RankingProvider>(
+      context,
+      listen: false,
+    );
     await rankingProvider.loadItems(widget.rankingList.id);
     setState(() {
       _localItems = List.from(rankingProvider.currentItems);
@@ -54,7 +57,11 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
           builder: (context, setDialogState) {
             Future<void> pickDialogImage() async {
               try {
-                final picked = await picker.pickImage(source: ImageSource.gallery, maxWidth: 500, maxHeight: 500);
+                final picked = await picker.pickImage(
+                  source: ImageSource.gallery,
+                  maxWidth: 500,
+                  maxHeight: 500,
+                );
                 if (picked != null) {
                   setDialogState(() {
                     itemImage = File(picked.path);
@@ -71,7 +78,10 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
                 borderRadius: BorderRadius.circular(24),
                 side: const BorderSide(color: AppColors.border),
               ),
-              title: const Text('Add Candidate Item', style: TextStyle(fontWeight: FontWeight.bold)),
+              title: const Text(
+                'Add Candidate Item',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               content: Form(
                 key: formKey,
                 child: SingleChildScrollView(
@@ -92,14 +102,26 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
                           child: itemImage != null
                               ? ClipRRect(
                                   borderRadius: BorderRadius.circular(16),
-                                  child: Image.file(itemImage!, fit: BoxFit.cover),
+                                  child: Image.file(
+                                    itemImage!,
+                                    fit: BoxFit.cover,
+                                  ),
                                 )
                               : Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: const [
-                                    Icon(Icons.add_a_photo_outlined, color: AppColors.accent),
+                                    Icon(
+                                      Icons.add_a_photo_outlined,
+                                      color: AppColors.accent,
+                                    ),
                                     SizedBox(height: 8),
-                                    Text('Add Photo (Optional)', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                                    Text(
+                                      'Add Photo (Optional)',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                    ),
                                   ],
                                 ),
                         ),
@@ -139,31 +161,40 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
               ),
               actions: [
                 TextButton(
-                  onPressed: dialogLoading ? null : () => Navigator.pop(context),
-                  child: const Text('CANCEL', style: TextStyle(color: AppColors.textSecondary)),
+                  onPressed: dialogLoading
+                      ? null
+                      : () => Navigator.pop(context),
+                  child: const Text(
+                    'CANCEL',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
                 ),
                 ElevatedButton(
                   onPressed: dialogLoading
                       ? null
                       : () async {
                           if (!formKey.currentState!.validate()) return;
-                          
+
                           setDialogState(() {
                             dialogLoading = true;
                           });
 
                           try {
-                            final rankingProvider = Provider.of<RankingProvider>(context, listen: false);
+                            final rankingProvider =
+                                Provider.of<RankingProvider>(
+                                  context,
+                                  listen: false,
+                                );
                             await rankingProvider.createItem(
                               listId: widget.rankingList.id,
                               name: nameController.text.trim(),
                               description: descController.text.trim(),
                               imageFile: itemImage,
                             );
-                            
+
                             // Re-fetch and sync state
                             _loadItems();
-                            
+
                             if (context.mounted) {
                               Navigator.pop(context);
                             }
@@ -175,7 +206,14 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
                           }
                         },
                   child: dialogLoading
-                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
                       : const Text('ADD'),
                 ),
               ],
@@ -188,7 +226,10 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
 
   void _submitBallot() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final rankingProvider = Provider.of<RankingProvider>(context, listen: false);
+    final rankingProvider = Provider.of<RankingProvider>(
+      context,
+      listen: false,
+    );
 
     if (authProvider.user == null) return;
     if (_localItems.isEmpty) return;
@@ -199,7 +240,8 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
 
     try {
       final orderedIds = _localItems.map((item) => item.id).toList();
-      
+      print(authProvider.user!.id);
+      print(authProvider.user!.name);
       await rankingProvider.submitVote(
         listId: widget.rankingList.id,
         userId: authProvider.user!.id,
@@ -210,7 +252,9 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text("Ballot submitted successfully! Leaderboard updated."),
+            content: Text(
+              "Ballot submitted successfully! Leaderboard updated.",
+            ),
             backgroundColor: AppColors.success,
           ),
         );
@@ -249,20 +293,28 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
         ],
       ),
       body: !_isInitialized
-          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+          ? const Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            )
           : Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // Info Header
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20.0,
+                    vertical: 8,
+                  ),
                   child: Text(
                     'Drag and drop items to arrange your Top 10 choice (Rank 1 at the top gets 10 points):',
-                    style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 13,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 8),
-                
+
                 // Reorderable List
                 Expanded(
                   child: _localItems.isEmpty
@@ -270,9 +322,18 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(Icons.playlist_add, size: 64, color: AppColors.textSecondary),
+                              const Icon(
+                                Icons.playlist_add,
+                                size: 64,
+                                color: AppColors.textSecondary,
+                              ),
                               const SizedBox(height: 16),
-                              const Text('No candidate items yet.', style: TextStyle(color: AppColors.textSecondary)),
+                              const Text(
+                                'No candidate items yet.',
+                                style: TextStyle(
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
                               const SizedBox(height: 12),
                               ElevatedButton(
                                 onPressed: _showAddItemDialog,
@@ -283,7 +344,8 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
                         )
                       : Theme(
                           data: Theme.of(context).copyWith(
-                            canvasColor: Colors.transparent, // Fix transparent background drag shadow
+                            canvasColor: Colors
+                                .transparent, // Fix transparent background drag shadow
                           ),
                           child: ReorderableListView.builder(
                             itemCount: _localItems.length,
@@ -299,12 +361,18 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
                             itemBuilder: (context, index) {
                               final item = _localItems[index];
                               final rankNumber = index + 1;
-                              
+
                               return Padding(
                                 key: ValueKey(item.id),
-                                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16.0,
+                                  vertical: 6.0,
+                                ),
                                 child: GlassCard(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 12,
+                                  ),
                                   borderColor: rankNumber == 1
                                       ? AppColors.accent.withOpacity(0.5)
                                       : AppColors.border.withOpacity(0.3),
@@ -316,11 +384,15 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
                                         height: 32,
                                         decoration: BoxDecoration(
                                           color: rankNumber == 1
-                                              ? AppColors.accent.withOpacity(0.2)
+                                              ? AppColors.accent.withOpacity(
+                                                  0.2,
+                                                )
                                               : Colors.white.withOpacity(0.05),
                                           shape: BoxShape.circle,
                                           border: Border.all(
-                                            color: rankNumber == 1 ? AppColors.accent : AppColors.border,
+                                            color: rankNumber == 1
+                                                ? AppColors.accent
+                                                : AppColors.border,
                                             width: 1.5,
                                           ),
                                         ),
@@ -328,25 +400,35 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
                                         child: Text(
                                           '#$rankNumber',
                                           style: TextStyle(
-                                            color: rankNumber == 1 ? AppColors.accent : Colors.white,
+                                            color: rankNumber == 1
+                                                ? AppColors.accent
+                                                : Colors.white,
                                             fontWeight: FontWeight.bold,
                                             fontSize: 12,
                                           ),
                                         ),
                                       ),
                                       const SizedBox(width: 16),
-                                      
+
                                       // Image Avatar (Cloudinary/Mock)
                                       if (item.imageUrl != null)
                                         ClipRRect(
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                           child: CachedNetworkImage(
                                             imageUrl: item.imageUrl!,
                                             width: 44,
                                             height: 44,
                                             fit: BoxFit.cover,
-                                            placeholder: (context, url) => const SizedBox(width: 44, height: 44),
-                                            errorWidget: (context, url, error) => const Icon(Icons.image),
+                                            placeholder: (context, url) =>
+                                                const SizedBox(
+                                                  width: 44,
+                                                  height: 44,
+                                                ),
+                                            errorWidget:
+                                                (context, url, error) =>
+                                                    const Icon(Icons.image),
                                           ),
                                         ),
                                       const SizedBox(width: 12),
@@ -354,24 +436,34 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
                                       // Item Info
                                       Expanded(
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Text(
                                               item.name,
-                                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 15,
+                                              ),
                                             ),
                                             Text(
                                               item.description,
-                                              style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                              style: const TextStyle(
+                                                fontSize: 11,
+                                                color: AppColors.textSecondary,
+                                              ),
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
                                             ),
                                           ],
                                         ),
                                       ),
-                                      
+
                                       // Reorder handle icon
-                                      const Icon(Icons.drag_indicator, color: AppColors.textSecondary),
+                                      const Icon(
+                                        Icons.drag_indicator,
+                                        color: AppColors.textSecondary,
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -380,7 +472,7 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
                           ),
                         ),
                 ),
-                
+
                 // Submit Button Panel
                 if (_localItems.isNotEmpty)
                   Padding(
@@ -396,9 +488,15 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
                           ? const SizedBox(
                               width: 24,
                               height: 24,
-                              child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2.5),
+                              child: CircularProgressIndicator(
+                                color: Colors.black,
+                                strokeWidth: 2.5,
+                              ),
                             )
-                          : const Text('SUBMIT BALLOT', style: TextStyle(fontWeight: FontWeight.w900)),
+                          : const Text(
+                              'SUBMIT BALLOT',
+                              style: TextStyle(fontWeight: FontWeight.w900),
+                            ),
                     ),
                   ),
               ],

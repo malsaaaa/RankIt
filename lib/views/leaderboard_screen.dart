@@ -1,7 +1,5 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/item_model.dart';
 import '../models/ranking_list_model.dart';
 import '../providers/ranking_provider.dart';
 import '../theme/app_theme.dart';
@@ -129,23 +127,33 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: () => rankingProvider.loadItems(widget.rankingList.id),
+            onPressed: () => setState(() {}),
           ),
         ],
       ),
-      body: StreamBuilder<List<ItemModel>>(
-        stream: rankingProvider.getLeaderboardStream(widget.rankingList.id),
+      body: FutureBuilder<List<Map<String, dynamic>>>(
+        future: rankingProvider.getLeaderboard(widget.rankingList.id),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
             return const Center(child: CircularProgressIndicator(color: AppColors.accent));
           }
 
+          if (snapshot.hasError) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Text(
+                  'Failed to load leaderboard. Please try again.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: AppColors.textSecondary),
+                ),
+              ),
+            );
+          }
+
           final items = snapshot.data ?? [];
 
-          // Calculate total ballots cast (Max of item.votesCount is a good proxy since each ballot ranks all items)
-          final totalBallots = items.isNotEmpty
-              ? items.map((e) => e.votesCount).reduce((a, b) => a > b ? a : b)
-              : 0;
+          final totalCandidates = items.length;
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -181,7 +189,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                               const Icon(Icons.people_outline, size: 16, color: AppColors.accent),
                               const SizedBox(width: 6),
                               Text(
-                                '$totalBallots voters submitted',
+                                '$totalCandidates candidates ranked',
                                 style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                               ),
                             ],
@@ -242,6 +250,10 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                         itemCount: items.length,
                         itemBuilder: (context, index) {
                           final item = items[index];
+                          final name = item['name'];
+                          final points = item['total_points'];
+                          final displayName = (name ?? '').toString();
+                          final pointsValue = double.tryParse((points ?? '').toString()) ?? 0;
                           final rank = index + 1;
 
                           return Padding(
@@ -295,35 +307,14 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                                   ),
                                   const SizedBox(width: 16),
 
-                                  // Image Avatar
-                                  if (item.imageUrl != null)
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(8),
-                                      child: CachedNetworkImage(
-                                        imageUrl: item.imageUrl!,
-                                        width: 48,
-                                        height: 48,
-                                        fit: BoxFit.cover,
-                                        placeholder: (context, url) => const SizedBox(width: 48, height: 48),
-                                        errorWidget: (context, url, error) => const Icon(Icons.image),
-                                      ),
-                                    ),
-                                  const SizedBox(width: 16),
-
                                   // Candidate details
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          item.name,
+                                          displayName,
                                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                        ),
-                                        Text(
-                                          item.description,
-                                          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
                                         ),
                                       ],
                                     ),
@@ -336,7 +327,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Text(
-                                        '${item.score.toStringAsFixed(0)}',
+                                        '${pointsValue.toStringAsFixed(0)}',
                                         style: const TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w900,
@@ -370,7 +361,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                         ),
                       ).then((_) {
                         // Refresh items when returning
-                        rankingProvider.loadItems(widget.rankingList.id);
+                        setState(() {});
                       });
                     },
                     icon: const Icon(Icons.how_to_vote),

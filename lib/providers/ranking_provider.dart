@@ -6,19 +6,21 @@ import '../models/item_model.dart';
 import '../services/database_service.dart';
 import '../services/cloudinary_service.dart';
 import '../services/gemini_service.dart';
+import '../services/api_service.dart';
 
 class RankingProvider extends ChangeNotifier {
   final DatabaseService _dbService = DatabaseService();
   final CloudinaryService _cloudinaryService = CloudinaryService();
   final GeminiService _geminiService = GeminiService();
+  final ApiService _apiService = ApiService();
 
   List<CategoryModel> _categories = [];
   List<RankingListModel> _rankingLists = [];
   List<ItemModel> _currentItems = [];
-  
+
   bool _isLoading = false;
   String? _errorMessage;
-  
+
   // Cache for Gemini summaries: Map<listId, summary>
   final Map<String, String> _aiSummaries = {};
 
@@ -44,7 +46,7 @@ class RankingProvider extends ChangeNotifier {
     _setLoading(true);
     _setError(null);
     try {
-      _categories = await _dbService.getCategories();
+      _categories = await _apiService.getCategories();
       _setLoading(false);
     } catch (e) {
       _setError("Failed to load categories: $e");
@@ -65,7 +67,12 @@ class RankingProvider extends ChangeNotifier {
       if (imageFile != null) {
         imageUrl = await _cloudinaryService.uploadImage(imageFile);
       }
-      final newCat = await _dbService.createCategory(name, description, imageUrl, userId);
+      final newCat = await _dbService.createCategory(
+        name,
+        description,
+        imageUrl,
+        userId,
+      );
       _categories.insert(0, newCat);
       _setLoading(false);
     } catch (e) {
@@ -79,7 +86,7 @@ class RankingProvider extends ChangeNotifier {
     _setLoading(true);
     _setError(null);
     try {
-      _rankingLists = await _dbService.getRankingLists(categoryId);
+      _rankingLists = await _apiService.getTopics(categoryId);
       _setLoading(false);
     } catch (e) {
       _setError("Failed to load ranking lists: $e");
@@ -96,7 +103,12 @@ class RankingProvider extends ChangeNotifier {
     _setLoading(true);
     _setError(null);
     try {
-      final newList = await _dbService.createRankingList(categoryId, title, description, userId);
+      final newList = await _dbService.createRankingList(
+        categoryId,
+        title,
+        description,
+        userId,
+      );
       _rankingLists.insert(0, newList);
       _setLoading(false);
     } catch (e) {
@@ -110,7 +122,7 @@ class RankingProvider extends ChangeNotifier {
     _setLoading(true);
     _setError(null);
     try {
-      _currentItems = await _dbService.getItems(listId);
+      _currentItems = await _apiService.getCandidates(listId);
       _setLoading(false);
     } catch (e) {
       _setError("Failed to load items: $e");
@@ -131,9 +143,14 @@ class RankingProvider extends ChangeNotifier {
       if (imageFile != null) {
         imageUrl = await _cloudinaryService.uploadImage(imageFile);
       }
-      final newItem = await _dbService.createItem(listId, name, description, imageUrl);
+      final newItem = await _dbService.createItem(
+        listId,
+        name,
+        description,
+        imageUrl,
+      );
       _currentItems.add(newItem);
-      
+
       // Update item count locally on the current list
       final idx = _rankingLists.indexWhere((l) => l.id == listId);
       if (idx != -1) {
@@ -164,8 +181,15 @@ class RankingProvider extends ChangeNotifier {
   }) async {
     _setError(null);
     try {
-      await _dbService.submitVote(listId, userId, userName, rankedItemIds);
-      // Reload items to get latest cumulative scores/ranking calculations
+      final rankedItems = _currentItems
+          .where((item) => rankedItemIds.contains(item.id))
+          .toList();
+
+      await _apiService.submitVote(
+        userId: userId,
+        topicId: listId,
+        items: rankedItems,
+      );
       await loadItems(listId);
       // Invalidate the AI summary since votes changed
       _aiSummaries.remove(listId);
@@ -175,8 +199,8 @@ class RankingProvider extends ChangeNotifier {
     }
   }
 
-  Stream<List<ItemModel>> getLeaderboardStream(String listId) {
-    return _dbService.streamLeaderboard(listId);
+  Future<List<Map<String, dynamic>>> getLeaderboard(String listId) async {
+    return await _apiService.getLeaderboard(listId);
   }
 
   Future<String> generateAiAnalysis({
@@ -188,7 +212,7 @@ class RankingProvider extends ChangeNotifier {
     if (!forceRefresh && _aiSummaries.containsKey(listId)) {
       return _aiSummaries[listId]!;
     }
-    
+
     // Sort items by score descending to represent current leaderboard status
     final items = List<ItemModel>.from(_currentItems);
     items.sort((a, b) => b.score.compareTo(a.score));

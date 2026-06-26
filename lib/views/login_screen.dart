@@ -30,29 +30,32 @@ class _LoginScreenState extends State<LoginScreen> {
   void _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    bool success;
+    final authProvider = context.read<AuthProvider>();
 
-    if (_isSignUp) {
-      success = await authProvider.signUp(
-        _nameController.text.trim(),
-        _emailController.text.trim(),
-        _passwordController.text,
-      );
-    } else {
-      success = await authProvider.signIn(
-        _emailController.text.trim(),
-        _passwordController.text,
-      );
-    }
-
-    if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_isSignUp ? 'Account created successfully!' : 'Welcome back!'),
-          backgroundColor: AppColors.success,
-        ),
-      );
+    try {
+      if (_isSignUp) {
+        await authProvider.register(
+          name: _nameController.text.trim(),
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+        );
+      } else {
+        await authProvider.login(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+        );
+      }
+      // Navigation handled automatically by AuthCheckWrapper
+      // when AuthProvider.isAuthenticated changes to true.
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceAll('Exception: ', '')),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
     }
   }
 
