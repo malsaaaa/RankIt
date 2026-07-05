@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -18,7 +19,7 @@ class _CreateCategoryScreenState extends State<CreateCategoryScreen> {
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   
-  File? _imageFile;
+  XFile? _imageFile;
   final ImagePicker _picker = ImagePicker();
   bool _localLoading = false;
 
@@ -39,7 +40,7 @@ class _CreateCategoryScreenState extends State<CreateCategoryScreen> {
       );
       if (pickedFile != null) {
         setState(() {
-          _imageFile = File(pickedFile.path);
+          _imageFile = pickedFile;
         });
       }
     } catch (e) {
@@ -166,7 +167,9 @@ class _CreateCategoryScreenState extends State<CreateCategoryScreen> {
                     child: _imageFile != null
                         ? ClipRRect(
                             borderRadius: BorderRadius.circular(20),
-                            child: Image.file(_imageFile!, fit: BoxFit.cover),
+                            child: kIsWeb
+                                ? Image.network(_imageFile!.path, fit: BoxFit.cover)
+                                : Image.file(File(_imageFile!.path), fit: BoxFit.cover),
                           )
                         : Column(
                             mainAxisAlignment: MainAxisAlignment.center,

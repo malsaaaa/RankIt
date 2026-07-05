@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
+import '../services/config_service.dart';
+import '../services/api_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -57,6 +59,164 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     }
+  }
+
+  void _showConfigSettingsDialog() {
+    final configService = ConfigService();
+    final urlController = TextEditingController();
+    final cloudNameController = TextEditingController();
+    final uploadPresetController = TextEditingController();
+    final apiKeyController = TextEditingController();
+    final geminiKeyController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) {
+        return FutureBuilder(
+          future: Future.wait([
+            configService.getBaseUrl(),
+            configService.getCloudName(),
+            configService.getUploadPreset(),
+            configService.getCloudinaryApiKey(),
+            configService.getGeminiKey(),
+          ]),
+          builder: (context, AsyncSnapshot<List<String>> snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (snapshot.hasData) {
+              urlController.text = snapshot.data![0];
+              cloudNameController.text = snapshot.data![1];
+              uploadPresetController.text = snapshot.data![2];
+              apiKeyController.text = snapshot.data![3];
+              geminiKeyController.text = snapshot.data![4];
+            }
+
+            return AlertDialog(
+              backgroundColor: AppColors.background,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+                side: const BorderSide(color: AppColors.border),
+              ),
+              title: Row(
+                children: const [
+                  Icon(Icons.settings_outlined, color: AppColors.accent),
+                  SizedBox(width: 12),
+                  Text(
+                    'Connection Settings',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              content: Form(
+                key: formKey,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Text(
+                        'Configure your local servers and cloud API credentials.',
+                        style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                      ),
+                      const SizedBox(height: 20),
+                      TextFormField(
+                        controller: urlController,
+                        decoration: const InputDecoration(
+                          labelText: 'Laravel Server API URL',
+                          hintText: 'e.g. http://192.168.0.199:8000/api',
+                          prefixIcon: Icon(Icons.dns_outlined),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'API URL is required';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: cloudNameController,
+                        decoration: const InputDecoration(
+                          labelText: 'Cloudinary Cloud Name',
+                          hintText: 'e.g. dfq28c11q',
+                          prefixIcon: Icon(Icons.cloud_queue_outlined),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: uploadPresetController,
+                        decoration: const InputDecoration(
+                          labelText: 'Cloudinary Upload Preset',
+                          hintText: 'e.g. preset_unsigned',
+                          prefixIcon: Icon(Icons.upload_file_outlined),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: apiKeyController,
+                        decoration: const InputDecoration(
+                          labelText: 'Cloudinary API Key (Public)',
+                          hintText: 'e.g. 786632886799257',
+                          prefixIcon: Icon(Icons.key_outlined),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: geminiKeyController,
+                        obscureText: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Gemini API Key',
+                          hintText: 'Enter Gemini API key',
+                          prefixIcon: Icon(Icons.api_outlined),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text(
+                    'CANCEL',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (!formKey.currentState!.validate()) return;
+
+                    await configService.setBaseUrl(urlController.text);
+                    await configService.setCloudName(cloudNameController.text);
+                    await configService.setUploadPreset(uploadPresetController.text);
+                    await configService.setCloudinaryApiKey(apiKeyController.text);
+                    await configService.setGeminiKey(geminiKeyController.text);
+
+                    // Update runtime active URL
+                    ApiService.baseUrl = urlController.text.trim();
+
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Settings saved successfully'),
+                          backgroundColor: AppColors.success,
+                        ),
+                      );
+                      Navigator.pop(context);
+                    }
+                  },
+                  child: const Text('SAVE'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -270,6 +430,17 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ],
                 ),
+              ),
+            ),
+          ),
+          // Dynamic configuration button (Gear icon) on top of all Stack layers
+          Positioned(
+            top: 16,
+            right: 16,
+            child: SafeArea(
+              child: IconButton(
+                icon: const Icon(Icons.settings_outlined, color: AppColors.textSecondary, size: 28),
+                onPressed: _showConfigSettingsDialog,
               ),
             ),
           ),

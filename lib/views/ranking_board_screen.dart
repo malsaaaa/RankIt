@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -45,7 +46,7 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
     final nameController = TextEditingController();
     final descController = TextEditingController();
     final formKey = GlobalKey<FormState>();
-    File? itemImage;
+    XFile? itemImage;
     final ImagePicker picker = ImagePicker();
     bool dialogLoading = false;
 
@@ -64,7 +65,7 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
                 );
                 if (picked != null) {
                   setDialogState(() {
-                    itemImage = File(picked.path);
+                    itemImage = picked;
                   });
                 }
               } catch (e) {
@@ -102,10 +103,15 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
                           child: itemImage != null
                               ? ClipRRect(
                                   borderRadius: BorderRadius.circular(16),
-                                  child: Image.file(
-                                    itemImage!,
-                                    fit: BoxFit.cover,
-                                  ),
+                                  child: kIsWeb
+                                      ? Image.network(
+                                          itemImage!.path,
+                                          fit: BoxFit.cover,
+                                        )
+                                      : Image.file(
+                                          File(itemImage!.path),
+                                          fit: BoxFit.cover,
+                                        ),
                                 )
                               : Column(
                                   mainAxisAlignment: MainAxisAlignment.center,

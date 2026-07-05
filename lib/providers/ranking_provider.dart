@@ -1,5 +1,5 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/category_model.dart';
 import '../models/ranking_list_model.dart';
 import '../models/item_model.dart';
@@ -164,7 +164,7 @@ class RankingProvider extends ChangeNotifier {
     required String listId,
     required String name,
     required String description,
-    required File? imageFile,
+    required XFile? imageFile,
   }) async {
     _setLoading(true);
     _setError(null);

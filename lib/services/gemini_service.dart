@@ -1,5 +1,5 @@
 import 'package:google_generative_ai/google_generative_ai.dart';
-import '../config/secrets.dart';
+import 'config_service.dart';
 import '../models/item_model.dart';
 
 class GeminiService {
@@ -10,7 +10,7 @@ class GeminiService {
     required String listDescription,
     required List<ItemModel> items,
   }) async {
-    final apiKey = Secrets.geminiApiKey;
+    final apiKey = await ConfigService().getGeminiKey();
 
     if (apiKey == 'YOUR_GEMINI_API_KEY' || apiKey.isEmpty) {
       print("Gemini API Key not configured. Generating high-quality local analysis...");

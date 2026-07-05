@@ -150,7 +150,7 @@ class AuthProvider extends ChangeNotifier {
   Future<void> restoreSession() async {
     _isLoading = true;
     _errorMessage = null;
-    notifyListeners();
+    Future.microtask(() => notifyListeners());
     try {
       final savedToken = await _tokenStorage.getToken();
       if (savedToken == null || savedToken.isEmpty) {

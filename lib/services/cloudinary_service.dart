@@ -1,16 +1,18 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:http/http.dart' as http;
-import '../config/secrets.dart';
+import 'package:image_picker/image_picker.dart';
+import 'config_service.dart';
 
 class CloudinaryService {
   /// Uploads a local file to Cloudinary and returns its secure URL.
   /// If credentials are not configured, falls back to returning a high-quality placeholder image URL.
-  Future<String> uploadImage(File file) async {
-    final cloudName = Secrets.cloudinaryCloudName;
-    final uploadPreset = Secrets.cloudinaryUploadPreset;
+  Future<String> uploadImage(XFile file) async {
+    final configService = ConfigService();
+    final cloudName = await configService.getCloudName();
+    final uploadPreset = await configService.getUploadPreset();
+    final apiKey = await configService.getCloudinaryApiKey();
 
-    // Check if placeholders are still present
+    // Check if placeholders are still present or empty
     if (cloudName == 'YOUR_CLOUDINARY_CLOUD_NAME' || 
         uploadPreset == 'YOUR_CLOUDINARY_UPLOAD_PRESET' ||
         cloudName.isEmpty || 
@@ -24,10 +26,16 @@ class CloudinaryService {
       final request = http.MultipartRequest('POST', uri);
 
       request.fields['upload_preset'] = uploadPreset;
+      if (apiKey.isNotEmpty) {
+        request.fields['api_key'] = apiKey;
+      }
+      
+      final bytes = await file.readAsBytes();
       request.files.add(
-        await http.MultipartFile.fromPath(
+        http.MultipartFile.fromBytes(
           'file',
-          file.path,
+          bytes,
+          filename: file.name,
         ),
       );
 
@@ -39,11 +47,11 @@ class CloudinaryService {
       } else {
         final responseData = await response.stream.bytesToString();
         print("Cloudinary upload failed (status ${response.statusCode}): $responseData");
-        throw Exception("Failed to upload image to Cloudinary: Status ${response.statusCode}");
+        throw Exception("Failed to upload image to Cloudinary: Status ${response.statusCode} - $responseData");
       }
     } catch (e) {
-      print("Error uploading to Cloudinary: $e. Falling back to placeholder.");
-      return _generatePlaceholderUrl();
+      print("Error uploading to Cloudinary: $e");
+      rethrow;
     }
   }
 

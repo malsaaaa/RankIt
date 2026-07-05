@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "105969995275",
+    "project_id": "rankit-web-df73a",
+    "storage_bucket": "rankit-web-df73a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:105969995275:android:70c74803d4903cac35410e",
+        "android_client_info": {
+          "package_name": "com.rankerating.rankerating"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAZAfmEoB8tL5RlxEDBw7N8wiTol2v9uWU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

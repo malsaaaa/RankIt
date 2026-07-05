@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'api_service.dart';
 
 class AuthApiService {
-  final String _baseUrl = ApiService.baseUrl;
+  String get _baseUrl => ApiService.baseUrl;
 
   Future<Map<String, dynamic>> register({
     required String name,

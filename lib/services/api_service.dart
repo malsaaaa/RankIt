@@ -5,7 +5,7 @@ import '../models/ranking_list_model.dart';
 import '../models/item_model.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://192.168.0.199:8000/api';
+  static String baseUrl = 'http://192.168.0.199:8000/api';
 
   Future<List<CategoryModel>> getCategories() async {
     print("Calling API...");

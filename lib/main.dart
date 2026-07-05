@@ -6,9 +6,19 @@ import 'providers/ranking_provider.dart';
 import 'theme/app_theme.dart';
 import 'views/login_screen.dart';
 import 'views/home_screen.dart';
+import 'services/config_service.dart';
+import 'services/api_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Load custom configurations on startup
+  try {
+    ApiService.baseUrl = await ConfigService().getBaseUrl();
+    print("API Base URL initialized to: ${ApiService.baseUrl}");
+  } catch (e) {
+    print("Error loading config: $e");
+  }
   
   // Try to initialize Firebase
   try {
