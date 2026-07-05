@@ -41,4 +41,24 @@ class RankingListModel {
       'itemsCount': itemsCount,
     };
   }
+
+  RankingListModel copyWith({
+    String? id,
+    String? categoryId,
+    String? title,
+    String? description,
+    String? createdBy,
+    DateTime? createdAt,
+    int? itemsCount,
+  }) {
+    return RankingListModel(
+      id: id ?? this.id,
+      categoryId: categoryId ?? this.categoryId,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      createdBy: createdBy ?? this.createdBy,
+      createdAt: createdAt ?? this.createdAt,
+      itemsCount: itemsCount ?? this.itemsCount,
+    );
+  }
 }

@@ -14,7 +14,7 @@ class ConfigService {
   static const String _keyGeminiKey = 'gemini_api_key';
 
   // Default fallback values
-  static const String defaultBaseUrl = 'http://192.168.0.199:8000/api';
+  static const String defaultBaseUrl = 'http://127.0.0.1:8000/api';
   static const String defaultCloudName = 'qibi1obr';
   static const String defaultUploadPreset = 'y04zgv0z';
   static const String defaultCloudinaryApiKey = '786632886799257';

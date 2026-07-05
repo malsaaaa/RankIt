@@ -133,11 +133,11 @@ class RankingProvider extends ChangeNotifier {
     _setLoading(true);
     _setError(null);
     try {
-      final newList = await _dbService.createRankingList(
-        categoryId,
-        title,
-        description,
-        userId,
+      final newList = await _apiService.createTopic(
+        categoryId: categoryId,
+        title: title,
+        description: description,
+        userId: userId,
       );
       _rankingLists.insert(0, newList);
       _setLoading(false);
@@ -173,11 +173,11 @@ class RankingProvider extends ChangeNotifier {
       if (imageFile != null) {
         imageUrl = await _cloudinaryService.uploadImage(imageFile);
       }
-      final newItem = await _dbService.createItem(
-        listId,
-        name,
-        description,
-        imageUrl,
+      final newItem = await _apiService.createCandidate(
+        topicId: listId,
+        name: name,
+        description: description,
+        imageUrl: imageUrl,
       );
       _currentItems.add(newItem);
 
@@ -185,13 +185,7 @@ class RankingProvider extends ChangeNotifier {
       final idx = _rankingLists.indexWhere((l) => l.id == listId);
       if (idx != -1) {
         final list = _rankingLists[idx];
-        _rankingLists[idx] = RankingListModel(
-          id: list.id,
-          categoryId: list.categoryId,
-          title: list.title,
-          description: list.description,
-          createdBy: list.createdBy,
-          createdAt: list.createdAt,
+        _rankingLists[idx] = list.copyWith(
           itemsCount: list.itemsCount + 1,
         );
       }
@@ -211,8 +205,12 @@ class RankingProvider extends ChangeNotifier {
   }) async {
     _setError(null);
     try {
-      final rankedItems = _currentItems
-          .where((item) => rankedItemIds.contains(item.id))
+      final Map<String, ItemModel> itemMap = {
+        for (var item in _currentItems) item.id: item
+      };
+      final rankedItems = rankedItemIds
+          .map((id) => itemMap[id])
+          .whereType<ItemModel>()
           .toList();
 
       await _apiService.submitVote(

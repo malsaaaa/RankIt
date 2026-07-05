@@ -5,7 +5,7 @@ import '../models/ranking_list_model.dart';
 import '../models/item_model.dart';
 
 class ApiService {
-  static String baseUrl = 'http://192.168.0.199:8000/api';
+  static String baseUrl = 'http://127.0.0.1:8000/api';
 
   Future<List<CategoryModel>> getCategories() async {
     print("Calling API...");
@@ -269,5 +269,92 @@ class ApiService {
       if (e is Exception) rethrow;
       throw Exception('Unexpected error deleting category: $e');
     }
+  }
+
+  Future<RankingListModel> createTopic({
+    required String categoryId,
+    required String title,
+    required String description,
+    required String userId,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/topics'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: jsonEncode({
+        'category_id': int.parse(categoryId),
+        'created_by': int.parse(userId),
+        'title': title,
+        'description': description,
+      }),
+    );
+
+    if (response.statusCode == 201) {
+      final item = jsonDecode(response.body);
+      return RankingListModel(
+        id: item['id'].toString(),
+        categoryId: item['category_id'].toString(),
+        title: item['title'] ?? '',
+        description: item['description'] ?? '',
+        createdBy: item['created_by'].toString(),
+        createdAt: item['created_at'] != null
+            ? DateTime.parse(item['created_at'])
+            : DateTime.now(),
+        itemsCount: 0,
+      );
+    }
+
+    String errorMessage = 'Failed to create topic (${response.statusCode})';
+    try {
+      final data = jsonDecode(response.body);
+      if (data is Map && data.containsKey('message')) {
+        errorMessage = data['message'].toString();
+      }
+    } catch (_) {}
+    throw Exception(errorMessage);
+  }
+
+  Future<ItemModel> createCandidate({
+    required String topicId,
+    required String name,
+    required String description,
+    String? imageUrl,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/topics/$topicId/candidates'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: jsonEncode({
+        'name': name,
+        'description': description,
+        'image_url': imageUrl,
+      }),
+    );
+
+    if (response.statusCode == 201) {
+      final item = jsonDecode(response.body);
+      return ItemModel(
+        id: item['id'].toString(),
+        listId: item['topic_id'].toString(),
+        name: item['name'] ?? '',
+        description: item['description'] ?? '',
+        imageUrl: item['image_url'],
+        score: 0,
+        votesCount: 0,
+      );
+    }
+
+    String errorMessage = 'Failed to create candidate (${response.statusCode})';
+    try {
+      final data = jsonDecode(response.body);
+      if (data is Map && data.containsKey('message')) {
+        errorMessage = data['message'].toString();
+      }
+    } catch (_) {}
+    throw Exception(errorMessage);
   }
 }

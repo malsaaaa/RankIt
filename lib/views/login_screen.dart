@@ -127,7 +127,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         controller: urlController,
                         decoration: const InputDecoration(
                           labelText: 'Laravel Server API URL',
-                          hintText: 'e.g. http://192.168.0.199:8000/api',
+                          hintText: 'e.g. http://127.0.0.1:8000/api',
                           prefixIcon: Icon(Icons.dns_outlined),
                         ),
                         validator: (value) {
