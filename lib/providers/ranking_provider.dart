@@ -17,6 +17,7 @@ class RankingProvider extends ChangeNotifier {
   List<CategoryModel> _categories = [];
   List<RankingListModel> _rankingLists = [];
   List<ItemModel> _currentItems = [];
+  List<Map<String, dynamic>> _userRanking = [];
 
   bool _isLoading = false;
   String? _errorMessage;
@@ -27,6 +28,7 @@ class RankingProvider extends ChangeNotifier {
   List<CategoryModel> get categories => _categories;
   List<RankingListModel> get rankingLists => _rankingLists;
   List<ItemModel> get currentItems => _currentItems;
+  List<Map<String, dynamic>> get userRanking => _userRanking;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
@@ -153,9 +155,30 @@ class RankingProvider extends ChangeNotifier {
     _setError(null);
     try {
       _currentItems = await _apiService.getCandidates(listId);
+      _userRanking = [];
       _setLoading(false);
     } catch (e) {
       _setError("Failed to load items: $e");
+      _setLoading(false);
+    }
+  }
+
+  Future<void> loadTopicWithUserRanking({
+    required String topicId,
+    required String userId,
+  }) async {
+    _setLoading(true);
+    _setError(null);
+    try {
+      final result = await _apiService.getTopicWithUserRanking(
+        topicId: topicId,
+        userId: userId,
+      );
+      _currentItems = result['candidates'] as List<ItemModel>;
+      _userRanking = result['user_ranking'] as List<Map<String, dynamic>>;
+      _setLoading(false);
+    } catch (e) {
+      _setError("Failed to load topic: $e");
       _setLoading(false);
     }
   }

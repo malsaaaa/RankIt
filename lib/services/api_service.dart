@@ -83,6 +83,42 @@ class ApiService {
     throw Exception('Failed to load candidates (${response.statusCode})');
   }
 
+  Future<Map<String, dynamic>> getTopicWithUserRanking({
+    required String topicId,
+    required String userId,
+  }) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/topics/$topicId?user_id=$userId'),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+
+      final List<dynamic> candidates = data['candidates'] ?? [];
+      final List<dynamic> userRanking = data['user_ranking'] ?? [];
+
+      return {
+        'candidates': candidates.map((item) {
+          return ItemModel(
+            id: item['id'].toString(),
+            listId: item['topic_id'].toString(),
+            name: item['name'] ?? '',
+            description: item['description'] ?? '',
+            imageUrl: item['image_url'],
+            score: 0,
+            votesCount: 0,
+          );
+        }).toList(),
+        'user_ranking': userRanking.map((item) => {
+          'candidate_id': item['candidate_id'].toString(),
+          'position': item['position'],
+        }).toList(),
+      };
+    }
+
+    throw Exception('Failed to load topic (${response.statusCode})');
+  }
+
   Future<void> submitVote({
     required String userId,
     required String topicId,
