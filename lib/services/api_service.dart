@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import '../config/mock_data.dart';
 import '../models/category_model.dart';
 import '../models/ranking_list_model.dart';
 import '../models/item_model.dart';
@@ -8,13 +10,13 @@ class ApiService {
   static String baseUrl = 'http://127.0.0.1:8000/api';
 
   Future<List<CategoryModel>> getCategories() async {
-    print("Calling API...");
+    debugPrint("Calling API...");
     final response = await http.get(Uri.parse('$baseUrl/categories'));
-    print(response.body);
+    debugPrint(response.body);
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body);
 
-      return data.map((item) {
+      final categories = data.map((item) {
         return CategoryModel(
           id: item['id'].toString(),
           name: item['name'] ?? '',
@@ -26,6 +28,12 @@ class ApiService {
               : DateTime.now(),
         );
       }).toList();
+
+      if (categories.isEmpty && useMockData) {
+        return MockData.getCategories();
+      }
+
+      return categories;
     }
 
     throw Exception('Failed to load categories (${response.statusCode})');
@@ -41,7 +49,7 @@ class ApiService {
         (item) => item['category_id'].toString() == categoryId,
       );
 
-      return filteredData.map((item) {
+      final topics = filteredData.map((item) {
         return RankingListModel(
           id: item['id'].toString(),
           categoryId: item['category_id'].toString(),
@@ -54,6 +62,12 @@ class ApiService {
           itemsCount: 0,
         );
       }).toList();
+
+      if (topics.isEmpty && useMockData) {
+        return MockData.getTopicsByCategory(categoryId);
+      }
+
+      return topics;
     }
 
     throw Exception('Failed to load topics (${response.statusCode})');
@@ -67,7 +81,7 @@ class ApiService {
 
       final List<dynamic> candidates = data['candidates'] ?? [];
 
-      return candidates.map((item) {
+      final mappedCandidates = candidates.map((item) {
         return ItemModel(
           id: item['id'].toString(),
           listId: item['topic_id'].toString(),
@@ -78,6 +92,12 @@ class ApiService {
           votesCount: 0,
         );
       }).toList();
+
+      if (mappedCandidates.isEmpty && useMockData) {
+        return MockData.getCandidatesByTopic(topicId);
+      }
+
+      return mappedCandidates;
     }
 
     throw Exception('Failed to load candidates (${response.statusCode})');
@@ -97,22 +117,33 @@ class ApiService {
       final List<dynamic> candidates = data['candidates'] ?? [];
       final List<dynamic> userRanking = data['user_ranking'] ?? [];
 
+      final mappedCandidates = candidates.map((item) {
+        return ItemModel(
+          id: item['id'].toString(),
+          listId: item['topic_id'].toString(),
+          name: item['name'] ?? '',
+          description: item['description'] ?? '',
+          imageUrl: item['image_url'],
+          score: 0,
+          votesCount: 0,
+        );
+      }).toList();
+
+      final mappedUserRanking = userRanking.map((item) => {
+        'candidate_id': item['candidate_id'].toString(),
+        'position': item['position'],
+      }).toList();
+
+      if (mappedCandidates.isEmpty && useMockData) {
+        return {
+          'candidates': MockData.getCandidatesByTopic(topicId),
+          'user_ranking': <Map<String, dynamic>>[],
+        };
+      }
+
       return {
-        'candidates': candidates.map((item) {
-          return ItemModel(
-            id: item['id'].toString(),
-            listId: item['topic_id'].toString(),
-            name: item['name'] ?? '',
-            description: item['description'] ?? '',
-            imageUrl: item['image_url'],
-            score: 0,
-            votesCount: 0,
-          );
-        }).toList(),
-        'user_ranking': userRanking.map((item) => {
-          'candidate_id': item['candidate_id'].toString(),
-          'position': item['position'],
-        }).toList(),
+        'candidates': mappedCandidates,
+        'user_ranking': mappedUserRanking,
       };
     }
 
@@ -136,8 +167,8 @@ class ApiService {
       "rankings": rankings,
     };
 
-    print("REQUEST:");
-    print(jsonEncode(requestBody));
+    debugPrint("REQUEST:");
+    debugPrint(jsonEncode(requestBody));
 
     final response = await http.post(
       Uri.parse('$baseUrl/submissions'),
@@ -145,11 +176,11 @@ class ApiService {
       body: jsonEncode(requestBody),
     );
 
-    print("STATUS:");
-    print(response.statusCode);
+    debugPrint("STATUS:");
+    debugPrint(response.statusCode.toString());
 
-    print("RESPONSE:");
-    print(response.body);
+    debugPrint("RESPONSE:");
+    debugPrint(response.body);
 
     if (response.statusCode != 201) {
       throw Exception(response.body);
@@ -160,7 +191,13 @@ class ApiService {
     final response = await http.get(Uri.parse('$baseUrl/leaderboard/$topicId'));
 
     if (response.statusCode == 200) {
-      return List<Map<String, dynamic>>.from(jsonDecode(response.body));
+      final leaderboard = List<Map<String, dynamic>>.from(jsonDecode(response.body));
+
+      if (leaderboard.isEmpty && useMockData) {
+        return MockData.getLeaderboardByTopic(topicId);
+      }
+
+      return leaderboard;
     }
 
     throw Exception('Failed to load leaderboard');

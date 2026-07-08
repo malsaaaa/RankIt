@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/user_model.dart';
 
@@ -34,8 +35,8 @@ class AuthService implements BaseAuthService {
 
   AuthService() {
     _init();
-    print("AuthService started");
-    print("useMock = $useMock");
+    debugPrint("AuthService started");
+    debugPrint("useMock = $useMock");
   }
 
   void _init() {
@@ -61,7 +62,7 @@ class AuthService implements BaseAuthService {
             _authStateController.add(_cachedUser);
           },
           onError: (error) {
-            print("FirebaseAuth error, switching to Mock: $error");
+            debugPrint("FirebaseAuth error, switching to Mock: $error");
             _fallbackToMock();
           },
         );
@@ -69,7 +70,7 @@ class AuthService implements BaseAuthService {
         _fallbackToMock();
       }
     } catch (e) {
-      print(
+      debugPrint(
         "Firebase initialization missing/failed. Falling back to Mock Auth. Error: $e",
       );
       useMock = true;
@@ -78,7 +79,7 @@ class AuthService implements BaseAuthService {
   }
 
   void _fallbackToMock() {
-    print("SWITCHED TO MOCK AUTH");
+    debugPrint("SWITCHED TO MOCK AUTH");
     useMock = true;
     _cachedUser = null;
     _authStateController.add(null);

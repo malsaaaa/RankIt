@@ -3,13 +3,11 @@ import 'package:image_picker/image_picker.dart';
 import '../models/category_model.dart';
 import '../models/ranking_list_model.dart';
 import '../models/item_model.dart';
-import '../services/database_service.dart';
 import '../services/cloudinary_service.dart';
 import '../services/gemini_service.dart';
 import '../services/api_service.dart';
 
 class RankingProvider extends ChangeNotifier {
-  final DatabaseService _dbService = DatabaseService();
   final CloudinaryService _cloudinaryService = CloudinaryService();
   final GeminiService _geminiService = GeminiService();
   final ApiService _apiService = ApiService();

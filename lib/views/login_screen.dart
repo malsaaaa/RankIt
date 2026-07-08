@@ -222,7 +222,6 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
-    final size = MediaQuery.of(context).size;
 
     return Scaffold(
       body: Stack(
@@ -236,7 +235,7 @@ class _LoginScreenState extends State<LoginScreen> {
               height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.primary.withOpacity(0.3),
+                color: AppColors.primary.withValues(alpha: 0.3),
               ),
             ),
           ),
@@ -248,7 +247,7 @@ class _LoginScreenState extends State<LoginScreen> {
               height: 250,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.accent.withOpacity(0.15),
+                color: AppColors.accent.withValues(alpha: 0.15),
               ),
             ),
           ),
@@ -377,9 +376,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: AppColors.error.withOpacity(0.1),
+                                  color: AppColors.error.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: AppColors.error.withOpacity(0.3)),
+                                  border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
                                 ),
                                 child: Text(
                                   authProvider.errorMessage!,

@@ -15,18 +15,18 @@ void main() async {
   // Load custom configurations on startup
   try {
     ApiService.baseUrl = await ConfigService().getBaseUrl();
-    print("API Base URL initialized to: ${ApiService.baseUrl}");
+    debugPrint("API Base URL initialized to: ${ApiService.baseUrl}");
   } catch (e) {
-    print("Error loading config: $e");
+    debugPrint("Error loading config: $e");
   }
   
   // Try to initialize Firebase
   try {
     await Firebase.initializeApp();
-    print("Firebase initialized successfully!");
+    debugPrint("Firebase initialized successfully!");
   } catch (e) {
     // Suppress configuration errors to fall back cleanly to Mock implementations
-    print("Firebase initialization skipped/failed. Running in Local Mock Mode. Details: $e");
+    debugPrint("Firebase initialization skipped/failed. Running in Local Mock Mode. Details: $e");
   }
 
   runApp(

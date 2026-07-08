@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'config_service.dart';
@@ -17,7 +18,7 @@ class CloudinaryService {
         uploadPreset == 'YOUR_CLOUDINARY_UPLOAD_PRESET' ||
         cloudName.isEmpty || 
         uploadPreset.isEmpty) {
-      print("Cloudinary credentials not configured. Using high-quality placeholder image.");
+      debugPrint("Cloudinary credentials not configured. Using high-quality placeholder image.");
       return _generatePlaceholderUrl();
     }
 
@@ -46,19 +47,17 @@ class CloudinaryService {
         return jsonDecoded['secure_url'] as String;
       } else {
         final responseData = await response.stream.bytesToString();
-        print("Cloudinary upload failed (status ${response.statusCode}): $responseData");
+        debugPrint("Cloudinary upload failed (status ${response.statusCode}): $responseData");
         throw Exception("Failed to upload image to Cloudinary: Status ${response.statusCode} - $responseData");
       }
     } catch (e) {
-      print("Error uploading to Cloudinary: $e");
+      debugPrint("Error uploading to Cloudinary: $e");
       rethrow;
     }
   }
 
   String _generatePlaceholderUrl() {
     // Return a random high-quality placeholder image from Unsplash for ranking categories
-    final topics = ['retro-gaming', 'cinema', 'ramen', 'sports', 'neon', 'vintage-technology'];
-    final randomTopic = (topics..shuffle()).first;
     return 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=600&sig=${DateTime.now().millisecondsSinceEpoch}';
   }
 }

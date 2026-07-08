@@ -185,7 +185,7 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
                                   )
                                 : null,
                             filled: true,
-                            fillColor: Colors.white.withOpacity(0.06),
+                            fillColor: Colors.white.withValues(alpha: 0.06),
                             contentPadding:
                                 const EdgeInsets.symmetric(vertical: 12),
                             border: OutlineInputBorder(
@@ -206,8 +206,8 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
                                     Icon(
                                       Icons.search_off,
                                       size: 40,
-                                      color: AppColors.textSecondary
-                                          .withOpacity(0.5),
+                                      color:                                       AppColors.textSecondary
+                                          .withValues(alpha: 0.5),
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
@@ -237,7 +237,7 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
                                         vertical: 12,
                                       ),
                                       borderColor:
-                                          AppColors.border.withOpacity(0.2),
+                                          AppColors.border.withValues(alpha: 0.2),
                                       child: Row(
                                         children: [
                                           if (item.imageUrl != null)
@@ -285,8 +285,8 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
                                               padding:
                                                   const EdgeInsets.all(6),
                                               decoration: BoxDecoration(
-                                                color: AppColors.accent
-                                                    .withOpacity(0.15),
+                                                color:                                                 AppColors.accent
+                                                    .withValues(alpha: 0.15),
                                                 borderRadius:
                                                     BorderRadius.circular(10),
                                               ),
@@ -342,7 +342,7 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
                   });
                 }
               } catch (e) {
-                print("Error picking image: $e");
+                debugPrint("Error picking image: $e");
               }
             }
 
@@ -368,7 +368,7 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
                           width: double.infinity,
                           height: 120,
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.02),
+                            color: Colors.white.withValues(alpha: 0.02),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(color: AppColors.border),
                           ),
@@ -479,7 +479,7 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
                             setDialogState(() {
                               dialogLoading = false;
                             });
-                            print("Error adding item: $e");
+                            debugPrint("Error adding item: $e");
                           }
                         },
                   child: dialogLoading
@@ -616,7 +616,7 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
                             style: TextStyle(
                               fontSize: 12,
                               color:
-                                  AppColors.textSecondary.withOpacity(0.7),
+                                  AppColors.textSecondary.withValues(alpha: 0.7),
                             ),
                           ),
                         ),
@@ -637,7 +637,7 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.accent,
                         side: BorderSide(
-                          color: AppColors.accent.withOpacity(0.4),
+                          color: AppColors.accent.withValues(alpha: 0.4),
                         ),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
@@ -659,7 +659,7 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
                                 Icons.emoji_events_outlined,
                                 size: 64,
                                 color:
-                                    AppColors.textSecondary.withOpacity(0.4),
+                                    AppColors.textSecondary.withValues(alpha: 0.4),
                               ),
                               const SizedBox(height: 16),
                               const Text(
@@ -673,8 +673,8 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
                               Text(
                                 "Tap 'Add Candidate' to start building your ranking.",
                                 style: TextStyle(
-                                  color: AppColors.textSecondary
-                                      .withOpacity(0.7),
+                                  color:                                   AppColors.textSecondary
+                                      .withValues(alpha: 0.7),
                                   fontSize: 13,
                                 ),
                                 textAlign: TextAlign.center,
@@ -691,7 +691,7 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
                               horizontal: 16,
                             ),
                             itemCount: _selectedItems.length,
-                            onReorder: (oldIndex, newIndex) {
+                            onReorderItem: (oldIndex, newIndex) {
                               setState(() {
                                 if (newIndex > oldIndex) {
                                   newIndex -= 1;
@@ -714,15 +714,15 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
                                     vertical: 6,
                                   ),
                                   borderColor: rankNumber == 1
-                                      ? AppColors.accent.withOpacity(0.5)
+                                      ? AppColors.accent.withValues(alpha: 0.5)
                                       : rankNumber == 2
                                           ? const Color(0xFFC0C0C0)
-                                              .withOpacity(0.4)
+                                              .withValues(alpha: 0.4)
                                           : rankNumber == 3
                                               ? const Color(0xFFCD7F32)
-                                                  .withOpacity(0.4)
+                                                  .withValues(alpha: 0.4)
                                               : AppColors.border
-                                                  .withOpacity(0.25),
+                                                  .withValues(alpha: 0.25),
                                   borderRadius: const BorderRadius.all(
                                     Radius.circular(16),
                                   ),
@@ -737,15 +737,15 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
                                         decoration: BoxDecoration(
                                           color: rankNumber == 1
                                               ? AppColors.accent
-                                                  .withOpacity(0.2)
+                                                  .withValues(alpha: 0.2)
                                               : rankNumber == 2
                                                   ? const Color(0xFFC0C0C0)
-                                                      .withOpacity(0.15)
+                                                      .withValues(alpha: 0.15)
                                                   : rankNumber == 3
                                                       ? const Color(0xFFCD7F32)
-                                                          .withOpacity(0.15)
+                                                          .withValues(alpha: 0.15)
                                                       : Colors.white
-                                                          .withOpacity(0.05),
+                                                          .withValues(alpha: 0.05),
                                           shape: BoxShape.circle,
                                           border: Border.all(
                                             color: rankNumber == 1
@@ -828,7 +828,7 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
                                               const EdgeInsets.only(right: 2),
                                           decoration: BoxDecoration(
                                             color: AppColors.error
-                                                .withOpacity(0.12),
+                                                .withValues(alpha: 0.12),
                                             borderRadius:
                                                 BorderRadius.circular(8),
                                           ),
@@ -862,7 +862,7 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        AppColors.background.withOpacity(0),
+                        AppColors.background.withValues(alpha: 0),
                         AppColors.background,
                       ],
                     ),
@@ -876,7 +876,7 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.accent,
                           foregroundColor: Colors.black,
-                          shadowColor: AppColors.accent.withOpacity(0.4),
+                          shadowColor: AppColors.accent.withValues(alpha: 0.4),
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),

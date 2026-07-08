@@ -15,8 +15,6 @@ class RankingListsScreen extends StatefulWidget {
   State<RankingListsScreen> createState() => _RankingListsScreenState();
 }
 
-class _HomeScreenState {} // Typo protection or just standard code
-
 class _RankingListsScreenState extends State<RankingListsScreen> {
   final _searchController = TextEditingController();
   String _searchQuery = "";
@@ -291,9 +289,9 @@ class _RankingListsScreenState extends State<RankingListsScreen> {
                               width: 48,
                               height: 48,
                               decoration: BoxDecoration(
-                                color: AppColors.primary.withOpacity(0.2),
+                                color: AppColors.primary.withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: AppColors.primary.withOpacity(0.5)),
+                                border: Border.all(color: AppColors.primary.withValues(alpha: 0.5)),
                               ),
                               child: const Icon(Icons.format_list_numbered_rtl, color: AppColors.accent),
                             ),

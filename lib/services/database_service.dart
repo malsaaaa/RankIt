@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../config/mock_data.dart';
 import '../models/category_model.dart';
 import '../models/ranking_list_model.dart';
 import '../models/item_model.dart';
@@ -30,9 +32,22 @@ class DatabaseService implements BaseDatabaseService {
   static bool useMock = false;
 
   // Static Mock Data Store
-  static final List<CategoryModel> _mockCategories = [];
-  static final List<RankingListModel> _mockRankingLists = [];
-  static final List<ItemModel> _mockItems = [];
+  static final List<CategoryModel> _mockCategories = MockData.getCategories();
+  static final List<RankingListModel> _mockRankingLists =
+      List<RankingListModel>.from(MockData.topics);
+  static final List<ItemModel> _mockItems = MockData.candidates
+      .map(
+        (item) => ItemModel(
+          id: item.id,
+          listId: item.listId,
+          name: item.name,
+          description: item.description,
+          imageUrl: item.imageUrl,
+          score: item.score,
+          votesCount: item.votesCount,
+        ),
+      )
+      .toList();
   static final List<VoteModel> _mockVotes = [];
 
   static FirebaseFirestore? _initFirestore() {
@@ -40,88 +55,13 @@ class DatabaseService implements BaseDatabaseService {
       // Just check if we can access the instance. Will throw if Firebase isn't initialized.
       return FirebaseFirestore.instance;
     } catch (e) {
-      print("Firestore not initialized. Switching to Mock DB: $e");
+      debugPrint("Firestore not initialized. Switching to Mock DB: $e");
       useMock = true;
       return null;
     }
   }
 
-  DatabaseService() {
-    if (_mockCategories.isEmpty) {
-      _seedMockData();
-    }
-  }
-
-  void _seedMockData() {
-    print("Seeding rich mock data for RankeRating local database...");
-    
-    // Seed Categories
-    _mockCategories.addAll([
-      CategoryModel(
-        id: 'cat_games',
-        name: 'Video Games',
-        description: 'Consoles, RPGs, shooters, indie gems, and platformers.',
-        imageUrl: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&q=80&w=600',
-        createdBy: 'system',
-        createdAt: DateTime.now().subtract(const Duration(days: 10)),
-      ),
-      CategoryModel(
-        id: 'cat_movies',
-        name: 'Movies & Series',
-        description: 'Cinematic masterpieces, binge-worthy TV series, and anime.',
-        imageUrl: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&q=80&w=600',
-        createdBy: 'system',
-        createdAt: DateTime.now().subtract(const Duration(days: 9)),
-      ),
-      CategoryModel(
-        id: 'cat_food',
-        name: 'Food & Culinary',
-        description: 'Street foods, desserts, fine dining, and world cuisines.',
-        imageUrl: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&q=80&w=600',
-        createdBy: 'system',
-        createdAt: DateTime.now().subtract(const Duration(days: 8)),
-      ),
-    ]);
-
-    // Seed Ranking Lists
-    _mockRankingLists.addAll([
-      RankingListModel(
-        id: 'list_rpg',
-        categoryId: 'cat_games',
-        title: 'Best RPGs of All Time',
-        description: 'The ultimate role-playing games that defined the genre with storytelling, mechanics, and worlds.',
-        createdBy: 'system',
-        createdAt: DateTime.now().subtract(const Duration(days: 5)),
-        itemsCount: 5,
-      ),
-      RankingListModel(
-        id: 'list_scifi',
-        categoryId: 'cat_movies',
-        title: 'Top Sci-Fi Masterpieces',
-        description: 'Mind-bending science fiction movies that explored space, time, and human consciousness.',
-        createdBy: 'system',
-        createdAt: DateTime.now().subtract(const Duration(days: 4)),
-        itemsCount: 5,
-      ),
-    ]);
-
-    // Seed Items
-    _mockItems.addAll([
-      // RPG Games
-      ItemModel(id: 'item_witcher3', listId: 'list_rpg', name: 'The Witcher 3: Wild Hunt', description: 'Geralt of Rivia searches for his adopted daughter Ciri in a massive dark fantasy world.', imageUrl: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&q=80&w=200', score: 95.0, votesCount: 10),
-      ItemModel(id: 'item_skyrim', listId: 'list_rpg', name: 'The Elder Scrolls V: Skyrim', description: 'The Dragonborn rises to defeat Alduin the World-Eater in the snowy province of Skyrim.', imageUrl: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=200', score: 87.0, votesCount: 10),
-      ItemModel(id: 'item_eldenring', listId: 'list_rpg', name: 'Elden Ring', description: 'Rise, Tarnished, and be guided by grace to brandish the power of the Elden Ring.', imageUrl: 'https://images.unsplash.com/photo-1655821888788-6107699e173b?auto=format&fit=crop&q=80&w=200', score: 92.0, votesCount: 10),
-      ItemModel(id: 'item_persona5', listId: 'list_rpg', name: 'Persona 5 Royal', description: 'High school students moonlighting as vigilante Phantom Thieves in modern Tokyo.', imageUrl: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&q=80&w=200', score: 76.0, votesCount: 10),
-      ItemModel(id: 'item_chrono', listId: 'list_rpg', name: 'Chrono Trigger', description: 'Classic time-traveling JRPG masterpiece with multiple endings and incredible music.', imageUrl: 'https://images.unsplash.com/photo-1552820728-8b83bb6b773f?auto=format&fit=crop&q=80&w=200', score: 81.0, votesCount: 10),
-
-      // Sci-Fi Movies
-      ItemModel(id: 'item_inception', listId: 'list_scifi', name: 'Inception', description: 'A thief who steals corporate secrets through the use of dream-sharing technology.', imageUrl: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&q=80&w=200', score: 94.0, votesCount: 10),
-      ItemModel(id: 'item_interstellar', listId: 'list_scifi', name: 'Interstellar', description: 'A team of explorers travel through a wormhole in space in an attempt to ensure humanity\'s survival.', imageUrl: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=200', score: 91.0, votesCount: 10),
-      ItemModel(id: 'item_matrix', listId: 'list_scifi', name: 'The Matrix', description: 'A computer hacker learns from mysterious rebels about the true nature of his reality.', imageUrl: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&q=80&w=200', score: 88.0, votesCount: 10),
-      ItemModel(id: 'item_blade_runner', listId: 'list_scifi', name: 'Blade Runner 2049', description: 'A new blade runner unearths a long-buried secret that has the potential to plunge what\'s left of society into chaos.', imageUrl: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&q=80&w=200', score: 82.0, votesCount: 10),
-      ItemModel(id: 'item_2001', listId: 'list_scifi', name: '2001: A Space Odyssey', description: 'Stanley Kubrick\'s grand epic about humanity\'s evolution and the mysteries of the cosmos.', imageUrl: 'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&q=80&w=200', score: 79.0, votesCount: 10),
-    ]);
-  }
+  DatabaseService();
 
   // --- BaseDatabaseService Implementation ---
 
@@ -135,7 +75,7 @@ class DatabaseService implements BaseDatabaseService {
         final query = await _firestore!.collection('categories').orderBy('createdAt', descending: true).get();
         return query.docs.map((doc) => CategoryModel.fromMap(doc.data(), doc.id)).toList();
       } catch (e) {
-        print("Firestore failed, returning mocks: $e");
+        debugPrint("Firestore failed, returning mocks: $e");
         return getCategories(); // Switch will happen in catch block internally or we can recurse with useMock = true
       }
     }
@@ -248,7 +188,7 @@ class DatabaseService implements BaseDatabaseService {
       await _firestore!.collection('items').doc(id).set(newItem.toMap());
       
       // Increment itemsCount on ranking_list doc
-      await _firestore!.collection('ranking_lists').doc(listId).update({
+      await _firestore.collection('ranking_lists').doc(listId).update({
         'itemsCount': FieldValue.increment(1),
       });
       return newItem;
@@ -280,7 +220,7 @@ class DatabaseService implements BaseDatabaseService {
       // Use Firestore Write Batch
       final batch = _firestore!.batch();
       
-      final voteRef = _firestore!.collection('votes').doc('${userId}_$listId');
+      final voteRef = _firestore.collection('votes').doc('${userId}_$listId');
       batch.set(voteRef, newVote.toMap());
 
       await batch.commit();
@@ -330,7 +270,7 @@ class DatabaseService implements BaseDatabaseService {
   // Borda Count Recalculation (Firestore)
   Future<void> _recalculateFirestoreLeaderboard(String listId) async {
     final votesSnap = await _firestore!.collection('votes').where('listId', isEqualTo: listId).get();
-    final itemsSnap = await _firestore!.collection('items').where('listId', isEqualTo: listId).get();
+    final itemsSnap = await _firestore.collection('items').where('listId', isEqualTo: listId).get();
 
     final votes = votesSnap.docs.map((doc) => VoteModel.fromMap(doc.data(), doc.id)).toList();
     final items = itemsSnap.docs.map((doc) => ItemModel.fromMap(doc.data(), doc.id)).toList();
@@ -350,9 +290,9 @@ class DatabaseService implements BaseDatabaseService {
     }
 
     // Update each item in Firestore
-    final batch = _firestore!.batch();
+    final batch = _firestore.batch();
     for (var item in items) {
-      final itemRef = _firestore!.collection('items').doc(item.id);
+      final itemRef = _firestore.collection('items').doc(item.id);
       batch.update(itemRef, {
         'score': itemScores[item.id] ?? 0.0,
         'votesCount': itemVotes[item.id] ?? 0,

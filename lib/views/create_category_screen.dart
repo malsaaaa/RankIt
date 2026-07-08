@@ -161,7 +161,7 @@ class _CreateCategoryScreenState extends State<CreateCategoryScreen> {
                 child: GlassCard(
                   padding: EdgeInsets.zero,
                   borderRadius: BorderRadius.circular(20),
-                  color: Colors.white.withOpacity(0.02),
+                  color: Colors.white.withValues(alpha: 0.02),
                   child: AspectRatio(
                     aspectRatio: 16 / 9,
                     child: _imageFile != null

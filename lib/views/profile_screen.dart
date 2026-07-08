@@ -25,7 +25,7 @@ class ProfileScreen extends StatelessWidget {
             const SizedBox(height: 16),
             // Avatar & Name Card
             GlassCard(
-              borderColor: AppColors.primary.withOpacity(0.3),
+              borderColor: AppColors.primary.withValues(alpha: 0.3),
               padding: const EdgeInsets.all(24),
               child: Column(
                 children: [
@@ -132,7 +132,7 @@ class ProfileScreen extends StatelessWidget {
                 Navigator.pop(context); // Return to auth check layer
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.error.withOpacity(0.15),
+                backgroundColor: AppColors.error.withValues(alpha: 0.15),
                 foregroundColor: AppColors.error,
                 side: const BorderSide(color: AppColors.error, width: 1.5),
                 elevation: 0,

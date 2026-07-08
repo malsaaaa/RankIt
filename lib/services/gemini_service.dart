@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'config_service.dart';
 import '../models/item_model.dart';
@@ -13,7 +14,7 @@ class GeminiService {
     final apiKey = await ConfigService().getGeminiKey();
 
     if (apiKey == 'YOUR_GEMINI_API_KEY' || apiKey.isEmpty) {
-      print("Gemini API Key not configured. Generating high-quality local analysis...");
+      debugPrint("Gemini API Key not configured. Generating high-quality local analysis...");
       return _generateLocalMockAnalysis(listTitle, items);
     }
 
@@ -61,7 +62,7 @@ Tone should be modern, polished, and exciting. Keep it clean and do not include 
         throw Exception("Gemini returned empty text response");
       }
     } catch (e) {
-      print("Error calling Gemini API: $e. Falling back to local mock analysis.");
+      debugPrint("Error calling Gemini API: $e. Falling back to local mock analysis.");
       return _generateLocalMockAnalysis(listTitle, items);
     }
   }

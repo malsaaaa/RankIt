@@ -26,7 +26,6 @@ class AppTheme {
       colorScheme: const ColorScheme.dark(
         primary: AppColors.primary,
         secondary: AppColors.accent,
-        background: AppColors.background,
         error: AppColors.error,
         surface: AppColors.surface,
       ),
@@ -55,7 +54,7 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.white.withOpacity(0.05),
+        fillColor: Colors.white.withValues(alpha: 0.05),
         hintStyle: GoogleFonts.outfit(color: AppColors.textSecondary),
         labelStyle: GoogleFonts.outfit(color: AppColors.textPrimary),
         border: OutlineInputBorder(
@@ -64,7 +63,7 @@ class AppTheme {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: AppColors.border.withOpacity(0.5)),
+          borderSide: BorderSide(color: AppColors.border.withValues(alpha: 0.5)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
@@ -79,7 +78,7 @@ class AppTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
-          shadowColor: AppColors.primary.withOpacity(0.4),
+          shadowColor: AppColors.primary.withValues(alpha: 0.4),
           elevation: 8,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -125,7 +124,7 @@ class GlassCard extends StatelessWidget {
         child: Container(
           padding: padding,
           decoration: BoxDecoration(
-            color: color ?? Colors.white.withOpacity(opacity),
+            color: color ?? Colors.white.withValues(alpha: opacity),
             borderRadius: borderRadius,
             border: Border.all(color: borderColor, width: 1.2),
           ),

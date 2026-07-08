@@ -16,12 +16,10 @@ class LeaderboardScreen extends StatefulWidget {
 
 class _LeaderboardScreenState extends State<LeaderboardScreen> {
   bool _isGeneratingAi = false;
-  String? _aiAnalysisText;
 
   void _generateAiAnalysis() async {
     setState(() {
       _isGeneratingAi = true;
-      _aiAnalysisText = null;
     });
 
     final provider = Provider.of<RankingProvider>(context, listen: false);
@@ -36,7 +34,6 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     if (mounted) {
       setState(() {
         _isGeneratingAi = false;
-        _aiAnalysisText = summary;
       });
       _showAiSummaryBottomSheet(summary);
     }
@@ -90,8 +87,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                   ),
                   const SizedBox(height: 16),
                   GlassCard(
-                    borderColor: AppColors.accent.withOpacity(0.3),
-                    color: AppColors.primary.withOpacity(0.05),
+                    borderColor: AppColors.accent.withValues(alpha: 0.3),
+                    color: AppColors.primary.withValues(alpha: 0.05),
                     child: Text(
                       summary,
                       style: const TextStyle(
@@ -162,7 +159,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                 child: GlassCard(
-                  borderColor: AppColors.primary.withOpacity(0.4),
+                  borderColor: AppColors.primary.withValues(alpha: 0.4),
                   padding: const EdgeInsets.all(20.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -261,8 +258,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                             child: GlassCard(
                               padding: const EdgeInsets.all(12),
                               borderColor: rank <= 3
-                                  ? AppColors.accent.withOpacity(0.4)
-                                  : AppColors.border.withOpacity(0.2),
+                                  ? AppColors.accent.withValues(alpha: 0.4)
+                                  : AppColors.border.withValues(alpha: 0.2),
                               child: Row(
                                 children: [
                                   // Medal or Rank Number
@@ -271,12 +268,12 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                                     height: 38,
                                     decoration: BoxDecoration(
                                       color: rank == 1
-                                          ? const Color(0xFFFFD700).withOpacity(0.15) // Gold
+                                          ? const Color(0xFFFFD700).withValues(alpha: 0.15)
                                           : rank == 2
-                                              ? const Color(0xFFC0C0C0).withOpacity(0.15) // Silver
+                                              ? const Color(0xFFC0C0C0).withValues(alpha: 0.15)
                                               : rank == 3
-                                                  ? const Color(0xFFCD7F32).withOpacity(0.15) // Bronze
-                                                  : Colors.white.withOpacity(0.02),
+                                                  ? const Color(0xFFCD7F32).withValues(alpha: 0.15)
+                                                  : Colors.white.withValues(alpha: 0.02),
                                       shape: BoxShape.circle,
                                       border: Border.all(
                                         color: rank == 1
