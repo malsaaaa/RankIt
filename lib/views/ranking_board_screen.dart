@@ -691,7 +691,7 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
                               horizontal: 16,
                             ),
                             itemCount: _selectedItems.length,
-                            onReorderItem: (oldIndex, newIndex) {
+                            onReorder: (oldIndex, newIndex) {
                               setState(() {
                                 if (newIndex > oldIndex) {
                                   newIndex -= 1;
