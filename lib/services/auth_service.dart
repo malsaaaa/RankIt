@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../models/user_model.dart';
 
 abstract class BaseAuthService {
@@ -12,6 +13,8 @@ abstract class BaseAuthService {
     String email,
     String password,
   );
+  Future<UserModel> signInWithGoogle();
+  Future<String?> getIdToken();
   Future<void> signOut();
 }
 
@@ -196,12 +199,82 @@ class AuthService implements BaseAuthService {
   }
 
   @override
+  Future<UserModel> signInWithGoogle() async {
+    if (useMock) {
+      await Future.delayed(const Duration(milliseconds: 800));
+      _cachedUser = UserModel(
+        id: 'mock_google_user_123',
+        name: 'Mock Google User',
+        email: 'google@rankit.demo',
+        createdAt: DateTime.now(),
+      );
+      _authStateController.add(_cachedUser);
+      return _cachedUser!;
+    } else {
+      try {
+        final GoogleSignIn googleSignIn = _getGoogleSignIn();
+        final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+        if (googleUser == null) {
+          throw FirebaseAuthException(
+            code: 'sign-in-aborted',
+            message: 'Sign in with Google was aborted.',
+          );
+        }
+
+        final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+        final OAuthCredential credential = GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken: googleAuth.idToken,
+        );
+
+        final credentials = await _firebaseAuth!.signInWithCredential(credential);
+        final firebaseUser = credentials.user!;
+
+        _cachedUser = UserModel(
+          id: firebaseUser.uid,
+          name: firebaseUser.displayName ?? 'Google User',
+          email: firebaseUser.email ?? '',
+          photoUrl: firebaseUser.photoURL,
+          createdAt: DateTime.now(),
+        );
+        _authStateController.add(_cachedUser);
+        return _cachedUser!;
+      } catch (e) {
+        rethrow;
+      }
+    }
+  }
+
+  @override
+  Future<String?> getIdToken() async {
+    if (useMock || _firebaseAuth == null) {
+      return 'mock_firebase_uid_123456';
+    }
+    try {
+      return await _firebaseAuth!.currentUser?.getIdToken();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  GoogleSignIn _getGoogleSignIn() {
+    return GoogleSignIn(
+      clientId: kIsWeb ? '105969995275-l5ilmcnbqn1mumf3ajcaabqovl6j3m0h.apps.googleusercontent.com' : null,
+    );
+  }
+
+  @override
   Future<void> signOut() async {
     if (useMock) {
       _cachedUser = null;
       _authStateController.add(null);
     } else {
-      await _firebaseAuth!.signOut();
+      if (_firebaseAuth != null) {
+        await _firebaseAuth!.signOut();
+      }
+      try {
+        await _getGoogleSignIn().signOut();
+      } catch (_) {}
     }
   }
 }

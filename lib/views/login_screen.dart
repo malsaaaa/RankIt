@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
 import '../services/config_service.dart';
@@ -402,6 +403,52 @@ class _LoginScreenState extends State<LoginScreen> {
                                       ),
                                     )
                                   : Text(_isSignUp ? 'SIGN UP' : 'LOG IN'),
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: const [
+                                Expanded(child: Divider(color: AppColors.border)),
+                                Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 16),
+                                  child: Text(
+                                    'OR',
+                                    style: TextStyle(
+                                      color: AppColors.textSecondary,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                Expanded(child: Divider(color: AppColors.border)),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            OutlinedButton.icon(
+                              onPressed: authProvider.isLoading
+                                  ? null
+                                  : () async {
+                                      try {
+                                        await authProvider.signInWithGoogle();
+                                      } catch (e) {
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text(e.toString()),
+                                              backgroundColor: AppColors.error,
+                                            ),
+                                          );
+                                        }
+                                      }
+                                    },
+                              icon: FaIcon(FontAwesomeIcons.google, size: 16, color: AppColors.accent),
+                              label: const Text('CONTINUE WITH GOOGLE'),
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(color: AppColors.border, width: 1.5),
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                              ),
                             ),
                           ],
                         ),

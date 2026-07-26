@@ -8,6 +8,7 @@ import 'views/login_screen.dart';
 import 'views/home_screen.dart';
 import 'services/config_service.dart';
 import 'services/api_service.dart';
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,7 +23,9 @@ void main() async {
   
   // Try to initialize Firebase
   try {
-    await Firebase.initializeApp();
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
     debugPrint("Firebase initialized successfully!");
   } catch (e) {
     // Suppress configuration errors to fall back cleanly to Mock implementations

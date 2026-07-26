@@ -1,10 +1,14 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:http/http.dart' as http;
 import '../models/user_model.dart';
-import '../services/auth_api_service.dart';
+import '../services/auth_service.dart';
 import '../services/token_storage_service.dart';
+import '../services/api_service.dart';
 
 class AuthProvider extends ChangeNotifier {
-  final AuthApiService _authApiService = AuthApiService();
+  final AuthService _authService = AuthService();
   final TokenStorageService _tokenStorage = TokenStorageService();
 
   bool _isLoading = false;
@@ -29,9 +33,37 @@ class AuthProvider extends ChangeNotifier {
       id: _currentUser!['id']?.toString() ?? '',
       name: _currentUser!['name']?.toString() ?? '',
       email: _currentUser!['email']?.toString() ?? '',
-      photoUrl: _currentUser!['photo_url']?.toString() ?? _currentUser!['photoUrl']?.toString(),
-      createdAt: DateTime.tryParse(_currentUser!['created_at']?.toString() ?? '') ?? DateTime.now(),
+      photoUrl: _currentUser!['photo_url']?.toString(),
+      createdAt: DateTime.now(),
     );
+  }
+
+  AuthProvider() {
+    _authService.onAuthStateChanged.listen((user) async {
+      if (user != null) {
+        _isLoggedIn = true;
+        try {
+          final idToken = await _authService.getIdToken();
+          _token = idToken;
+          if (idToken != null) {
+            await _tokenStorage.saveToken(idToken);
+            await _syncUserWithBackend(idToken);
+          }
+        } catch (_) {}
+        _currentUser ??= {
+          'id': user.id,
+          'name': user.name,
+          'email': user.email,
+          'photo_url': user.photoUrl,
+        };
+      } else {
+        _isLoggedIn = false;
+        _token = null;
+        _currentUser = null;
+        await _tokenStorage.deleteToken();
+      }
+      notifyListeners();
+    });
   }
 
   Future<void> register({
@@ -43,20 +75,7 @@ class AuthProvider extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
     try {
-      final response = await _authApiService.register(
-        name: name,
-        email: email,
-        password: password,
-      );
-
-      _token = response['token']?.toString();
-      _currentUser = response['user'] as Map<String, dynamic>?;
-      _isLoggedIn = true;
-
-      if (_token != null) {
-        await _tokenStorage.saveToken(_token!);
-      }
-
+      await _authService.createUserWithEmailAndPassword(name, email, password);
       _isLoading = false;
       notifyListeners();
     } catch (e) {
@@ -75,19 +94,23 @@ class AuthProvider extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
     try {
-      final response = await _authApiService.login(
-        email: email,
-        password: password,
-      );
+      await _authService.signInWithEmailAndPassword(email, password);
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = e.toString();
+      notifyListeners();
+      rethrow;
+    }
+  }
 
-      _token = response['token']?.toString();
-      _currentUser = response['user'] as Map<String, dynamic>?;
-      _isLoggedIn = true;
-
-      if (_token != null) {
-        await _tokenStorage.saveToken(_token!);
-      }
-
+  Future<void> signInWithGoogle() async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      await _authService.signInWithGoogle();
       _isLoading = false;
       notifyListeners();
     } catch (e) {
@@ -99,44 +122,11 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> logout() async {
-    final currentToken = _token;
-    if (currentToken == null) {
-      throw Exception('Cannot logout: User is not authenticated (no token found).');
-    }
-
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
     try {
-      await _authApiService.logout(currentToken);
-
-      await _tokenStorage.deleteToken();
-      _token = null;
-      _currentUser = null;
-      _isLoggedIn = false;
-
-      _isLoading = false;
-      notifyListeners();
-    } catch (e) {
-      _isLoading = false;
-      _errorMessage = e.toString();
-      notifyListeners();
-      rethrow;
-    }
-  }
-
-  Future<void> loadCurrentUser() async {
-    final currentToken = _token;
-    if (currentToken == null) {
-      throw Exception('Cannot load user: No authentication token found.');
-    }
-
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-    try {
-      final response = await _authApiService.getCurrentUser(currentToken);
-      _currentUser = response;
+      await _authService.signOut();
       _isLoading = false;
       notifyListeners();
     } catch (e) {
@@ -150,19 +140,47 @@ class AuthProvider extends ChangeNotifier {
   Future<void> restoreSession() async {
     _isLoading = true;
     _errorMessage = null;
-    Future.microtask(() => notifyListeners());
+    notifyListeners();
     try {
-      final savedToken = await _tokenStorage.getToken();
-      if (savedToken == null || savedToken.isEmpty) {
-        _isLoggedIn = false;
-        _isLoading = false;
-        notifyListeners();
-        return;
+      if (AuthService.useMock) {
+        final user = _authService.currentUser;
+        if (user != null) {
+          _isLoggedIn = true;
+          _token = 'mock_firebase_uid_123456';
+          _currentUser = {
+            'id': user.id,
+            'name': user.name,
+            'email': user.email,
+            'photo_url': user.photoUrl,
+          };
+        } else {
+          _isLoggedIn = false;
+          _token = null;
+          _currentUser = null;
+        }
+      } else {
+        final user = FirebaseAuth.instance.currentUser;
+        if (user != null) {
+          _isLoggedIn = true;
+          final idToken = await user.getIdToken();
+          _token = idToken;
+          if (idToken != null) {
+            await _tokenStorage.saveToken(idToken);
+            await _syncUserWithBackend(idToken);
+          }
+          _currentUser ??= {
+            'id': user.uid,
+            'name': user.displayName ?? user.email?.split('@').first ?? 'User',
+            'email': user.email ?? '',
+            'photo_url': user.photoURL,
+          };
+        } else {
+          _isLoggedIn = false;
+          _token = null;
+          _currentUser = null;
+          await _tokenStorage.deleteToken();
+        }
       }
-
-      _token = savedToken;
-      await loadCurrentUser();
-      _isLoggedIn = true;
       _isLoading = false;
       notifyListeners();
     } catch (e) {
@@ -173,7 +191,6 @@ class AuthProvider extends ChangeNotifier {
       _isLoading = false;
       _errorMessage = e.toString();
       notifyListeners();
-      rethrow;
     }
   }
 
@@ -183,7 +200,6 @@ class AuthProvider extends ChangeNotifier {
       await login(email: email, password: password);
       return true;
     } catch (e) {
-      // errorMessage is already set in login() catch block.
       return false;
     }
   }
@@ -193,7 +209,6 @@ class AuthProvider extends ChangeNotifier {
       await register(name: name, email: email, password: password);
       return true;
     } catch (e) {
-      // errorMessage is already set in register() catch block.
       return false;
     }
   }
@@ -202,14 +217,32 @@ class AuthProvider extends ChangeNotifier {
     try {
       await logout();
     } catch (e) {
-      // Keep going if logout fails, so the user can still attempt sign out locally.
-      await _tokenStorage.deleteToken();
       _token = null;
       _currentUser = null;
       _isLoggedIn = false;
       _isLoading = false;
+      await _tokenStorage.deleteToken();
       notifyListeners();
       rethrow;
+    }
+  }
+
+  Future<void> _syncUserWithBackend(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiService.baseUrl}/user'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        _currentUser = data;
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint("Failed to sync user with backend: $e");
     }
   }
 }
