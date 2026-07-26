@@ -15,7 +15,7 @@ class ConfigService {
   static const String _keyUnsplashKey = 'unsplash_api_key';
 
   // Default fallback values
-  static const String defaultBaseUrl = 'http://127.0.0.1:8000/api';
+  static const String defaultBaseUrl = 'http://localhost:8000/api';
   static const String defaultCloudName = 'vjrjqeg1';
   static const String defaultUploadPreset = 'svnoavxj';
   static const String defaultCloudinaryApiKey = '';
@@ -26,6 +26,9 @@ class ConfigService {
     final val = await _storage.read(key: _keyBaseUrl);
     if (val == null || val.trim().isEmpty) {
       return defaultBaseUrl;
+    }
+    if (val.contains('127.0.0.1')) {
+      return val.replaceAll('127.0.0.1', 'localhost');
     }
     return val;
   }
