@@ -111,11 +111,26 @@ flutter test
 
 ---
 
-## 🔗 Connecting to Laravel REST API + MySQL Backend
+## 🔗 Firebase Authentication & Google Sign-In
 
-The codebase contains a clean data isolation abstraction. All voting, listing, and user operations call functions declared in `BaseDatabaseService` and `BaseAuthService`. 
+The Flutter client has been integrated with **Firebase Authentication** and **Google Sign-In**. 
 
-To connect to your Laravel REST API service instead of Firebase:
-1. Create a class `LaravelDatabaseService` implementing `BaseDatabaseService` inside `lib/services/`.
-2. Connect endpoints to your Laravel REST API endpoints (using the `http` package).
-3. Update `lib/providers/ranking_provider.dart` to instantiate `LaravelDatabaseService` instead of `DatabaseService`.
+### 1. Web Client ID Configuration (for Web Platform)
+For Google Sign-In to function properly on the Web, a Client ID must be set:
+- **web/index.html:** The meta tag containing your Web Client ID is configured at:
+  ```html
+  <meta name="google-signin-client_id" content="YOUR_WEB_CLIENT_ID">
+  ```
+- **lib/services/auth_service.dart:** The `_getGoogleSignIn()` helper provides this client ID programmatically when initializing on the Web.
+
+### 2. Synchronization with Laravel Backend
+- When a user logs in (via Email/Password or Google Sign-In), the client retrieves the Firebase ID Token (JWT) and passes it in the `Authorization: Bearer <token>` header of HTTP requests.
+- The Laravel backend verifies this token via custom middleware, extracting user details and automatically creating/syncing the user record in the local MySQL database if it doesn't exist yet.
+
+### 3. Local Mock Testing Fallback
+If you are developing locally without live Firebase configuration, you can force the app into Mock Auth Mode by setting:
+```dart
+// lib/services/auth_service.dart
+static bool useMock = true;
+```
+This bypasses external servers and allows immediate mock testing.
