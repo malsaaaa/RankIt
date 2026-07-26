@@ -59,7 +59,7 @@ class ApiService {
           createdAt: item['created_at'] != null
               ? DateTime.parse(item['created_at'])
               : DateTime.now(),
-          itemsCount: 0,
+          itemsCount: item['candidates_count'] ?? 0,
         );
       }).toList();
 
