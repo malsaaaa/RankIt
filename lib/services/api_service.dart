@@ -124,8 +124,8 @@ class ApiService {
           name: item['name'] ?? '',
           description: item['description'] ?? '',
           imageUrl: item['image_url'],
-          score: 0,
-          votesCount: 0,
+          score: (item['total_points'] ?? 0.0).toDouble(),
+          votesCount: item['votes_count'] ?? 0,
         );
       }).toList();
 
