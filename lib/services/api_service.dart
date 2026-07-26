@@ -124,8 +124,8 @@ class ApiService {
           name: item['name'] ?? '',
           description: item['description'] ?? '',
           imageUrl: item['image_url'],
-          score: (item['total_points'] ?? 0.0).toDouble(),
-          votesCount: item['votes_count'] ?? 0,
+          score: double.tryParse(item['total_points']?.toString() ?? '') ?? 0.0,
+          votesCount: int.tryParse(item['votes_count']?.toString() ?? '') ?? 0,
         );
       }).toList();
 
