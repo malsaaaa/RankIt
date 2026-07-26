@@ -432,17 +432,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
           ),
-          // Dynamic configuration button (Gear icon) on top of all Stack layers
-          Positioned(
-            top: 16,
-            right: 16,
-            child: SafeArea(
-              child: IconButton(
-                icon: const Icon(Icons.settings_outlined, color: AppColors.textSecondary, size: 28),
-                onPressed: _showConfigSettingsDialog,
-              ),
-            ),
-          ),
         ],
       ),
     );
