@@ -430,4 +430,36 @@ class ApiService {
     } catch (_) {}
     throw Exception(errorMessage);
   }
+
+  Future<void> suggestCandidate({
+    required String topicId,
+    required String userId,
+    required String name,
+    String? description,
+  }) async {
+    final body = <String, dynamic>{
+      'user_id': userId,
+      'name': name,
+    };
+    if (description != null && description.isNotEmpty) {
+      body['description'] = description;
+    }
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/topics/$topicId/suggestions'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(body),
+    );
+
+    if (response.statusCode != 201) {
+      String errorMessage = 'Failed to submit suggestion';
+      try {
+        final data = jsonDecode(response.body);
+        if (data is Map && data.containsKey('message')) {
+          errorMessage = data['message'].toString();
+        }
+      } catch (_) {}
+      throw Exception(errorMessage);
+    }
+  }
 }

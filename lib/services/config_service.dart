@@ -12,13 +12,15 @@ class ConfigService {
   static const String _keyUploadPreset = 'cloudinary_upload_preset';
   static const String _keyCloudinaryApiKey = 'cloudinary_api_key';
   static const String _keyGeminiKey = 'gemini_api_key';
+  static const String _keyUnsplashKey = 'unsplash_api_key';
 
   // Default fallback values
   static const String defaultBaseUrl = 'http://127.0.0.1:8000/api';
-  static const String defaultCloudName = 'qibi1obr';
-  static const String defaultUploadPreset = 'y04zgv0z';
-  static const String defaultCloudinaryApiKey = '786632886799257';
+  static const String defaultCloudName = 'vjrjqeg1';
+  static const String defaultUploadPreset = 'svnoavxj';
+  static const String defaultCloudinaryApiKey = '';
   static const String defaultGeminiKey = '';
+  static const String defaultUnsplashKey = '';
 
   Future<String> getBaseUrl() async {
     final val = await _storage.read(key: _keyBaseUrl);
@@ -80,11 +82,24 @@ class ConfigService {
     await _storage.write(key: _keyGeminiKey, value: val.trim());
   }
 
+  Future<String> getUnsplashKey() async {
+    final val = await _storage.read(key: _keyUnsplashKey);
+    if (val == null || val.trim().isEmpty) {
+      return defaultUnsplashKey;
+    }
+    return val;
+  }
+
+  Future<void> setUnsplashKey(String val) async {
+    await _storage.write(key: _keyUnsplashKey, value: val.trim());
+  }
+
   Future<void> clearAll() async {
     await _storage.delete(key: _keyBaseUrl);
     await _storage.delete(key: _keyCloudName);
     await _storage.delete(key: _keyUploadPreset);
     await _storage.delete(key: _keyCloudinaryApiKey);
     await _storage.delete(key: _keyGeminiKey);
+    await _storage.delete(key: _keyUnsplashKey);
   }
 }

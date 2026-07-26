@@ -186,11 +186,12 @@ class RankingProvider extends ChangeNotifier {
     required String name,
     required String description,
     required XFile? imageFile,
+    String? externalImageUrl,
   }) async {
     _setLoading(true);
     _setError(null);
     try {
-      String? imageUrl;
+      String? imageUrl = externalImageUrl;
       if (imageFile != null) {
         imageUrl = await _cloudinaryService.uploadImage(imageFile);
       }
@@ -256,15 +257,28 @@ class RankingProvider extends ChangeNotifier {
     required String listId,
     required String title,
     required String description,
+    required List<Map<String, dynamic>> rawItems,
     bool forceRefresh = false,
   }) async {
     if (!forceRefresh && _aiSummaries.containsKey(listId)) {
       return _aiSummaries[listId]!;
     }
 
-    // Sort items by score descending to represent current leaderboard status
-    final items = List<ItemModel>.from(_currentItems);
-    items.sort((a, b) => b.score.compareTo(a.score));
+    // Convert rawItems map to ItemModel instances
+    final items = rawItems.map((map) {
+      final name = map['name']?.toString() ?? '';
+      final points = double.tryParse(map['total_points']?.toString() ?? '0.0') ?? 0.0;
+      final votes = int.tryParse(map['votes_count']?.toString() ?? '0') ?? 0;
+      final desc = map['description']?.toString() ?? '';
+      return ItemModel(
+        id: map['candidate_id']?.toString() ?? '',
+        listId: listId,
+        name: name,
+        description: desc,
+        score: points,
+        votesCount: votes,
+      );
+    }).toList();
 
     try {
       final analysis = await _geminiService.analyzeRankings(
@@ -277,6 +291,29 @@ class RankingProvider extends ChangeNotifier {
       return analysis;
     } catch (e) {
       return "Unable to perform AI analysis at this time. Please check your internet connection or API keys. Error: $e";
+    }
+  }
+
+  Future<void> suggestCandidate({
+    required String topicId,
+    required String userId,
+    required String name,
+    String? description,
+  }) async {
+    _setLoading(true);
+    _setError(null);
+    try {
+      await _apiService.suggestCandidate(
+        topicId: topicId,
+        userId: userId,
+        name: name,
+        description: description,
+      );
+      _setLoading(false);
+    } catch (e) {
+      _setError("Failed to submit suggestion: $e");
+      _setLoading(false);
+      rethrow;
     }
   }
 }

@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/ranking_provider.dart';
 import '../theme/app_theme.dart';
-import 'create_category_screen.dart';
 import 'ranking_lists_screen.dart';
 import 'profile_screen.dart';
 
@@ -35,6 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final double screenWidth = MediaQuery.of(context).size.width;
     final authProvider = Provider.of<AuthProvider>(context);
     final rankingProvider = Provider.of<RankingProvider>(context);
     final user = authProvider.user;
@@ -183,16 +183,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         style: TextStyle(color: AppColors.textSecondary),
                       ),
                       const SizedBox(height: 8),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const CreateCategoryScreen(),
-                            ),
-                          );
-                        },
-                        child: const Text('Create the first one!'),
+                      const Text(
+                        'Please wait for the admin to add categories.',
+                        style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
                       )
                     ],
                   ),
@@ -201,11 +194,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: screenWidth > 1200
+                        ? 4
+                        : screenWidth > 800
+                            ? 3
+                            : 2,
                     crossAxisSpacing: 16,
                     mainAxisSpacing: 16,
-                    childAspectRatio: 0.8,
+                    childAspectRatio: screenWidth > 800 ? 1.25 : 0.85,
                   ),
                   itemCount: filteredCategories.length,
                   itemBuilder: (context, index) {
@@ -223,15 +220,13 @@ class _HomeScreenState extends State<HomeScreen> {
                         tag: 'cat_card_${cat.id}',
                         child: GlassCard(
                           padding: EdgeInsets.zero,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                          child: Stack(
                             children: [
-                              // Category Cover Image
-                              Expanded(
-                                flex: 5,
+                              // Full Category Cover Image
+                              Positioned.fill(
                                 child: Container(
                                   decoration: BoxDecoration(
-                                    borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                                    borderRadius: BorderRadius.circular(24),
                                     image: DecorationImage(
                                       image: CachedNetworkImageProvider(
                                         cat.imageUrl ?? 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=300',
@@ -241,35 +236,56 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 ),
                               ),
-                              // Category Title & Info
-                              Expanded(
-                                flex: 4,
-                                child: Padding(
-                                  padding: const EdgeInsets.all(12.0),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        cat.name,
-                                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        cat.description,
-                                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                          fontSize: 11,
-                                        ),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ],
+                              // Vignette Gradient for text readability
+                              Positioned.fill(
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(24),
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [
+                                        Colors.transparent,
+                                        Colors.black.withValues(alpha: 0.2),
+                                        Colors.black.withValues(alpha: 0.85),
+                                      ],
+                                      stops: const [0.0, 0.4, 1.0],
+                                    ),
                                   ),
+                                ),
+                              ),
+                              // Category Title & Description (Overlay at the bottom)
+                              Positioned(
+                                left: 16,
+                                right: 16,
+                                bottom: 16,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      cat.name,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: 0.5,
+                                        decoration: TextDecoration.none,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      cat.description,
+                                      style: TextStyle(
+                                        color: Colors.white.withValues(alpha: 0.8),
+                                        fontSize: 11,
+                                        decoration: TextDecoration.none,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
@@ -283,17 +299,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const CreateCategoryScreen()),
-          );
-        },
-        child: const Icon(Icons.add),
-      ),
+
     );
   }
 }

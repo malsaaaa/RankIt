@@ -169,8 +169,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         controller: geminiKeyController,
                         obscureText: true,
                         decoration: const InputDecoration(
-                          labelText: 'Gemini API Key',
-                          hintText: 'Enter Gemini API key',
+                          labelText: 'OpenRouter API Key',
+                          hintText: 'Enter OpenRouter API key',
                           prefixIcon: Icon(Icons.api_outlined),
                         ),
                       ),

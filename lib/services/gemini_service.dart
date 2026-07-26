@@ -1,11 +1,12 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:http/http.dart' as http;
 import 'config_service.dart';
 import '../models/item_model.dart';
 
 class GeminiService {
-  /// Analyzes a list of ranked items and generates a smart analysis summary.
-  /// If the Gemini API key is not set, generates an analytical mock summary locally.
+  /// Analyzes a list of ranked items and generates a smart analysis summary via OpenRouter.
+  /// If the API key is not set, generates an analytical mock summary locally.
   Future<String> analyzeRankings({
     required String listTitle,
     required String listDescription,
@@ -14,7 +15,7 @@ class GeminiService {
     final apiKey = await ConfigService().getGeminiKey();
 
     if (apiKey == 'YOUR_GEMINI_API_KEY' || apiKey.isEmpty) {
-      debugPrint("Gemini API Key not configured. Generating high-quality local analysis...");
+      debugPrint("OpenRouter API Key not configured. Generating high-quality local analysis...");
       return _generateLocalMockAnalysis(listTitle, items);
     }
 
@@ -23,11 +24,6 @@ class GeminiService {
     }
 
     try {
-      final model = GenerativeModel(
-        model: 'gemini-1.5-flash',
-        apiKey: apiKey,
-      );
-
       final itemsSummary = items.asMap().entries.map((entry) {
         final index = entry.key + 1;
         final item = entry.value;
@@ -53,22 +49,43 @@ Highlight:
 Tone should be modern, polished, and exciting. Keep it clean and do not include markdown titles.
 """;
 
-      final content = [Content.text(prompt)];
-      final response = await model.generateContent(content);
-      
-      if (response.text != null && response.text!.isNotEmpty) {
-        return response.text!;
+      final uri = Uri.parse('https://openrouter.ai/api/v1/chat/completions');
+      final response = await http.post(
+        uri,
+        headers: {
+          'Authorization': 'Bearer $apiKey',
+          'Content-Type': 'application/json',
+          'HTTP-Referer': 'http://localhost:8080',
+          'X-Title': 'RankIt App',
+        },
+        body: json.encode({
+          'model': 'google/gemini-2.5-flash-lite',
+          'messages': [
+            {'role': 'user', 'content': prompt}
+          ],
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['choices'] != null && data['choices'].isNotEmpty) {
+          final text = data['choices'][0]['message']['content'] as String;
+          return text.trim();
+        } else {
+          throw Exception("OpenRouter returned empty choices");
+        }
       } else {
-        throw Exception("Gemini returned empty text response");
+        debugPrint("OpenRouter returned error: ${response.statusCode} - ${response.body}");
+        throw Exception("OpenRouter API returned status code ${response.statusCode}");
       }
     } catch (e) {
-      debugPrint("Error calling Gemini API: $e. Falling back to local mock analysis.");
+      debugPrint("Error calling OpenRouter API: $e. Falling back to local mock analysis.");
       return _generateLocalMockAnalysis(listTitle, items);
     }
   }
 
   Future<String> _generateLocalMockAnalysis(String listTitle, List<ItemModel> items) async {
-    await Future.delayed(const Duration(milliseconds: 1000)); // Simulate AI typing/processing latency
+    await Future.delayed(const Duration(milliseconds: 1000)); // Simulate AI typing latency
     
     if (items.isEmpty) {
       return "No items have been ranked in '$listTitle' yet. Add items and cast your vote to see AI analysis!";

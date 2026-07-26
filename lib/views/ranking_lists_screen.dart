@@ -33,117 +33,7 @@ class _RankingListsScreenState extends State<RankingListsScreen> {
     super.dispose();
   }
 
-  void _showCreateListDialog() {
-    final titleController = TextEditingController();
-    final descController = TextEditingController();
-    final formKey = GlobalKey<FormState>();
 
-    showDialog(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              backgroundColor: AppColors.background,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24),
-                side: const BorderSide(color: AppColors.border),
-              ),
-              title: const Text('Create Ranking List', style: TextStyle(fontWeight: FontWeight.bold)),
-              content: Form(
-                key: formKey,
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      TextFormField(
-                        controller: titleController,
-                        decoration: const InputDecoration(
-                          labelText: 'List Title',
-                          hintText: 'e.g., Top Action Movies, Best Cafes',
-                        ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter a title';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: descController,
-                        maxLines: 3,
-                        decoration: const InputDecoration(
-                          labelText: 'Description',
-                          hintText: 'Describe this ranking list...',
-                        ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter a description';
-                          }
-                          return null;
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('CANCEL', style: TextStyle(color: AppColors.textSecondary)),
-                ),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (!formKey.currentState!.validate()) return;
-                    
-                    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-                    final rankingProvider = Provider.of<RankingProvider>(context, listen: false);
-                    
-                    if (authProvider.user == null) return;
-                    
-                    Navigator.pop(context); // Close dialog
-
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Creating list...'), duration: Duration(seconds: 1)),
-                    );
-
-                    try {
-                      await rankingProvider.createRankingList(
-                        categoryId: widget.category.id,
-                        title: titleController.text.trim(),
-                        description: descController.text.trim(),
-                        userId: authProvider.user!.id,
-                      );
-                      
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("List created successfully!"),
-                            backgroundColor: AppColors.success,
-                          ),
-                        );
-                      }
-                    } catch (e) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text("Failed to create list: $e"),
-                            backgroundColor: AppColors.error,
-                          ),
-                        );
-                      }
-                    }
-                  },
-                  child: const Text('CREATE'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -255,10 +145,9 @@ class _RankingListsScreenState extends State<RankingListsScreen> {
                     const SizedBox(height: 16),
                     const Text('No ranking lists yet.', style: TextStyle(color: AppColors.textSecondary)),
                     const SizedBox(height: 8),
-                    ElevatedButton.icon(
-                      onPressed: _showCreateListDialog,
-                      icon: const Icon(Icons.add),
-                      label: const Text('CREATE FIRST LIST'),
+                    const Text(
+                      'Please wait for the admin to add lists.',
+                      style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
                     ),
                   ],
                 ),
@@ -352,12 +241,7 @@ class _RankingListsScreenState extends State<RankingListsScreen> {
             ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        onPressed: _showCreateListDialog,
-        child: const Icon(Icons.add),
-      ),
+
     );
   }
 }

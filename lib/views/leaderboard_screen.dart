@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import '../models/ranking_list_model.dart';
 import '../providers/ranking_provider.dart';
+import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
 import 'ranking_board_screen.dart';
 
@@ -16,8 +18,157 @@ class LeaderboardScreen extends StatefulWidget {
 
 class _LeaderboardScreenState extends State<LeaderboardScreen> {
   bool _isGeneratingAi = false;
+  List<Map<String, dynamic>>? _loadedLeaderboardItems;
+
+  void _showSuggestCandidateDialog() {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final user = authProvider.user;
+
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please log in to suggest candidates.'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    final nameController = TextEditingController();
+    final descController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    bool isSubmittingSuggestion = false;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              backgroundColor: AppColors.background,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+                side: BorderSide(color: AppColors.primary.withValues(alpha: 0.3)),
+              ),
+              title: Row(
+                children: const [
+                  Icon(Icons.lightbulb_outline, color: AppColors.accent),
+                  SizedBox(width: 10),
+                  Text(
+                    'Suggest Candidate',
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+                  ),
+                ],
+              ),
+              content: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Suggest a missing item for the admin to review and add to this list.',
+                      style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: nameController,
+                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                      decoration: const InputDecoration(
+                        labelText: 'Candidate Name',
+                        hintText: 'e.g. Zinedine Zidane',
+                        prefixIcon: Icon(Icons.tag),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Please enter a candidate name';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: descController,
+                      maxLines: 3,
+                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                      decoration: const InputDecoration(
+                        labelText: 'Brief Description',
+                        hintText: 'e.g. Legendary midfielder who won...',
+                        prefixIcon: Icon(Icons.description_outlined),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isSubmittingSuggestion ? null : () => Navigator.pop(context),
+                  child: const Text('CANCEL', style: TextStyle(color: AppColors.textSecondary)),
+                ),
+                ElevatedButton(
+                  onPressed: isSubmittingSuggestion
+                      ? null
+                      : () async {
+                          if (!formKey.currentState!.validate()) return;
+
+                          setState(() {
+                            isSubmittingSuggestion = true;
+                          });
+
+                          try {
+                            final rankingProvider = Provider.of<RankingProvider>(context, listen: false);
+                            await rankingProvider.suggestCandidate(
+                              topicId: widget.rankingList.id,
+                              userId: user.id,
+                              name: nameController.text.trim(),
+                              description: descController.text.trim(),
+                            );
+
+                            if (context.mounted) {
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Suggestion submitted! The admin will review it.'),
+                                  backgroundColor: AppColors.success,
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            setState(() {
+                              isSubmittingSuggestion = false;
+                            });
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Failed to submit suggestion: $e'),
+                                  backgroundColor: AppColors.error,
+                                ),
+                              );
+                            }
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: isSubmittingSuggestion
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Text('SUGGEST'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 
   void _generateAiAnalysis() async {
+    if (_loadedLeaderboardItems == null || _loadedLeaderboardItems!.isEmpty) return;
+
     setState(() {
       _isGeneratingAi = true;
     });
@@ -29,6 +180,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
       listId: widget.rankingList.id,
       title: widget.rankingList.title,
       description: widget.rankingList.description,
+      rawItems: _loadedLeaderboardItems!,
     );
 
     if (mounted) {
@@ -149,6 +301,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
           }
 
           final items = snapshot.data ?? [];
+          _loadedLeaderboardItems = items;
 
           final totalCandidates = items.length;
 
@@ -179,34 +332,13 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                       ),
                       const SizedBox(height: 16),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            children: [
-                              const Icon(Icons.people_outline, size: 16, color: AppColors.accent),
-                              const SizedBox(width: 6),
-                              Text(
-                                '$totalCandidates candidates ranked',
-                                style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                              ),
-                            ],
+                          const Icon(Icons.people_outline, size: 16, color: AppColors.accent),
+                          const SizedBox(width: 6),
+                          Text(
+                            '$totalCandidates candidates ranked',
+                            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                           ),
-                          // AI Summary Action
-                          if (items.isNotEmpty)
-                            TextButton.icon(
-                              onPressed: _isGeneratingAi ? null : _generateAiAnalysis,
-                              icon: _isGeneratingAi
-                                  ? const SizedBox(
-                                      width: 14,
-                                      height: 14,
-                                      child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accent),
-                                    )
-                                  : const Icon(Icons.auto_awesome, size: 16, color: AppColors.accent),
-                              label: const Text(
-                                'AI Summary',
-                                style: TextStyle(color: AppColors.accent, fontSize: 12, fontWeight: FontWeight.bold),
-                              ),
-                            )
                         ],
                       ),
                     ],
@@ -302,7 +434,29 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                                             style: const TextStyle(fontWeight: FontWeight.bold),
                                           ),
                                   ),
-                                  const SizedBox(width: 16),
+                                  const SizedBox(width: 12),
+
+                                  // Image Avatar
+                                  if (item['image_url'] != null && (item['image_url'] as String).isNotEmpty) ...[
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: CachedNetworkImage(
+                                        imageUrl: item['image_url'] as String,
+                                        width: 38,
+                                        height: 38,
+                                        fit: BoxFit.cover,
+                                        placeholder: (context, url) => const SizedBox(
+                                          width: 38,
+                                          height: 38,
+                                        ),
+                                        errorWidget: (context, url, error) => const Icon(
+                                          Icons.image,
+                                          size: 20,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                  ],
 
                                   // Candidate details
                                   Expanded(
@@ -368,6 +522,19 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
             ],
           );
         },
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          child: TextButton.icon(
+            onPressed: _showSuggestCandidateDialog,
+            icon: const Icon(Icons.lightbulb_outline, color: AppColors.accent, size: 18),
+            label: const Text(
+              "Don't see your favorite? Suggest Candidate",
+              style: TextStyle(color: AppColors.accent, fontSize: 13, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ),
       ),
     );
   }

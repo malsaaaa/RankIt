@@ -9,6 +9,7 @@ import '../models/ranking_list_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/ranking_provider.dart';
 import '../theme/app_theme.dart';
+import 'widgets/unsplash_search_dialog.dart';
 
 class RankingBoardScreen extends StatefulWidget {
   final RankingListModel rankingList;
@@ -58,7 +59,6 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
 
     setState(() {
       _allItems = List.from(rankingProvider.currentItems);
-      _selectedItems = [];
       _isInitialized = true;
     });
 
@@ -75,6 +75,11 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
             .whereType<ItemModel>()
             .toList();
         _hasPreviousRanking = true;
+      });
+    } else {
+      setState(() {
+        _selectedItems = List.from(_allItems);
+        _hasPreviousRanking = false;
       });
     }
   }
@@ -320,6 +325,7 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
     final descController = TextEditingController();
     final formKey = GlobalKey<FormState>();
     XFile? itemImage;
+    String? externalImageUrl;
     final ImagePicker picker = ImagePicker();
     bool dialogLoading = false;
 
@@ -329,21 +335,65 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            Future<void> pickDialogImage() async {
-              try {
-                final picked = await picker.pickImage(
-                  source: ImageSource.gallery,
-                  maxWidth: 500,
-                  maxHeight: 500,
-                );
-                if (picked != null) {
-                  setDialogState(() {
-                    itemImage = picked;
-                  });
-                }
-              } catch (e) {
-                debugPrint("Error picking image: $e");
-              }
+            Future<void> showImageSourceOptions() async {
+              showModalBottomSheet(
+                context: context,
+                backgroundColor: AppColors.background,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                ),
+                builder: (context) {
+                  return SafeArea(
+                    child: Wrap(
+                      children: [
+                        ListTile(
+                          leading: const Icon(Icons.photo_library_outlined, color: AppColors.accent),
+                          title: const Text('Choose from Gallery'),
+                          onTap: () async {
+                            Navigator.pop(context);
+                            try {
+                              final picked = await picker.pickImage(
+                                source: ImageSource.gallery,
+                                maxWidth: 500,
+                                maxHeight: 500,
+                              );
+                              if (picked != null) {
+                                setDialogState(() {
+                                  itemImage = picked;
+                                  externalImageUrl = null;
+                                });
+                              }
+                            } catch (e) {
+                              debugPrint("Error picking image: $e");
+                            }
+                          },
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.cloud_download_outlined, color: AppColors.accent),
+                          title: const Text('Search Unsplash (Cloud Photos)'),
+                          onTap: () async {
+                            Navigator.pop(context);
+                            final selectedUrl = await showDialog<String>(
+                              context: context,
+                              builder: (context) => UnsplashSearchDialog(
+                                initialQuery: nameController.text.isNotEmpty 
+                                    ? nameController.text.trim() 
+                                    : widget.rankingList.title,
+                              ),
+                            );
+                            if (selectedUrl != null) {
+                              setDialogState(() {
+                                externalImageUrl = selectedUrl;
+                                itemImage = null; // Clear local picked image
+                              });
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
             }
 
             return AlertDialog(
@@ -363,7 +413,7 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       GestureDetector(
-                        onTap: dialogLoading ? null : pickDialogImage,
+                        onTap: dialogLoading ? null : showImageSourceOptions,
                         child: Container(
                           width: double.infinity,
                           height: 120,
@@ -385,23 +435,31 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
                                           fit: BoxFit.cover,
                                         ),
                                 )
-                              : Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: const [
-                                    Icon(
-                                      Icons.add_a_photo_outlined,
-                                      color: AppColors.accent,
-                                    ),
-                                    SizedBox(height: 8),
-                                    Text(
-                                      'Add Photo (Optional)',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: AppColors.textSecondary,
+                              : externalImageUrl != null
+                                  ? ClipRRect(
+                                      borderRadius: BorderRadius.circular(16),
+                                      child: Image.network(
+                                        externalImageUrl!,
+                                        fit: BoxFit.cover,
                                       ),
+                                    )
+                                  : Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: const [
+                                        Icon(
+                                          Icons.add_a_photo_outlined,
+                                          color: AppColors.accent,
+                                        ),
+                                        SizedBox(height: 8),
+                                        Text(
+                                          'Add Photo (Optional)',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: AppColors.textSecondary,
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -468,6 +526,7 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
                               name: nameController.text.trim(),
                               description: descController.text.trim(),
                               imageFile: itemImage,
+                              externalImageUrl: externalImageUrl,
                             );
 
                             _loadItems();
@@ -496,6 +555,135 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
               ],
             );
           },
+        );
+      },
+    );
+  }
+
+  void _showConfirmationDialog() {
+    if (_selectedItems.length < 2) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Select at least 2 candidates before submitting.'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    final topCandidates = _selectedItems.take(3).toList();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: AppColors.background,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+            side: BorderSide(color: AppColors.primary.withValues(alpha: 0.3)),
+          ),
+          title: Row(
+            children: const [
+              Icon(Icons.how_to_vote_outlined, color: AppColors.accent),
+              SizedBox(width: 10),
+              Text(
+                'Confirm Your Ballot',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Are you sure you want to submit this ranking? Here is your top choice summary:',
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.5),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (int i = 0; i < topCandidates.length; i++)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4.0),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 22,
+                              height: 22,
+                              decoration: BoxDecoration(
+                                color: i == 0
+                                    ? AppColors.accent.withValues(alpha: 0.2)
+                                    : AppColors.border.withValues(alpha: 0.1),
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: i == 0 ? AppColors.accent : AppColors.border,
+                                  width: 1.2,
+                                ),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                '${i + 1}',
+                                style: TextStyle(
+                                  color: i == 0 ? AppColors.accent : Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                topCandidates[i].name,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Note: This will overwrite any previous ranking you made for this topic.',
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 11, fontStyle: FontStyle.italic),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('EDIT VOTE', style: TextStyle(color: AppColors.textSecondary)),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _submitBallot();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.accent,
+                foregroundColor: Colors.black,
+                shadowColor: AppColors.accent.withValues(alpha: 0.4),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              ),
+              child: const Text('SUBMIT'),
+            ),
+          ],
         );
       },
     );
@@ -570,13 +758,6 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: const Text('Arrange Rankings'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add_box_outlined, color: AppColors.accent),
-            tooltip: 'Add Candidate Item',
-            onPressed: _showAddItemDialog,
-          ),
-        ],
       ),
       body: !_isInitialized
           ? const Center(
@@ -624,29 +805,7 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
                   ),
                 ),
 
-                // ─── Add Candidate Button ──────────────────────────────
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed:
-                          _availableItems.isNotEmpty ? _showCandidateSelector : null,
-                      icon: const Icon(Icons.person_add_alt_1, size: 20),
-                      label: const Text('Add Candidate'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.accent,
-                        side: BorderSide(
-                          color: AppColors.accent.withValues(alpha: 0.4),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+                // Add Candidate Button Removed
 
                 // ─── Ranking List ──────────────────────────────────────
                 Expanded(
@@ -816,29 +975,7 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
                                         ),
                                       ),
 
-                                      // Remove Button
-                                      InkWell(
-                                        onTap: () =>
-                                            _removeFromSelected(item),
-                                        borderRadius:
-                                            BorderRadius.circular(8),
-                                        child: Container(
-                                          padding: const EdgeInsets.all(6),
-                                          margin:
-                                              const EdgeInsets.only(right: 2),
-                                          decoration: BoxDecoration(
-                                            color: AppColors.error
-                                                .withValues(alpha: 0.12),
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                          ),
-                                          child: const Icon(
-                                            Icons.close,
-                                            size: 18,
-                                            color: AppColors.error,
-                                          ),
-                                        ),
-                                      ),
+                                      // Remove button removed for ballot completeness
 
                                       // Drag Handle
                                       const Icon(
@@ -872,7 +1009,7 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
                     child: SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: _isSubmitting ? null : _submitBallot,
+                        onPressed: _isSubmitting ? null : _showConfirmationDialog,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.accent,
                           foregroundColor: Colors.black,

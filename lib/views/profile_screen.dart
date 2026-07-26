@@ -106,15 +106,15 @@ class ProfileScreen extends StatelessWidget {
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       children: const [
-                        Icon(Icons.format_list_bulleted, color: AppColors.primary, size: 28),
+                        Icon(Icons.military_tech_outlined, color: AppColors.primary, size: 28),
                         SizedBox(height: 8),
                         Text(
-                          '3',
+                          'Level 3',
                           style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
                         ),
                         SizedBox(height: 4),
                         Text(
-                          'Lists Created',
+                          'Voter Rank',
                           style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
                         ),
                       ],
