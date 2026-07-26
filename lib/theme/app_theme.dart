@@ -29,6 +29,18 @@ class AppTheme {
         error: AppColors.error,
         surface: AppColors.surface,
       ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: const Color(0xFF1F1E29),
+        contentTextStyle: GoogleFonts.outfit(
+          color: Colors.white,
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
       textTheme: GoogleFonts.outfitTextTheme(
         ThemeData.dark().textTheme.copyWith(
           titleLarge: GoogleFonts.outfit(
