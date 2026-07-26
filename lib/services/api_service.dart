@@ -162,7 +162,7 @@ class ApiService {
     }
 
     final requestBody = {
-      "user_id": int.parse(userId),
+      "user_id": userId,
       "topic_id": int.parse(topicId),
       "rankings": rankings,
     };
@@ -358,7 +358,7 @@ class ApiService {
       },
       body: jsonEncode({
         'category_id': int.parse(categoryId),
-        'created_by': int.parse(userId),
+        'created_by': userId,
         'title': title,
         'description': description,
       }),
