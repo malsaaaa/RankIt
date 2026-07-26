@@ -69,11 +69,15 @@ class _RankingBoardScreenState extends State<RankingBoardScreen> {
       sortedRanking.sort(
         (a, b) => (a['position'] as int).compareTo(b['position'] as int),
       );
+      final rankedIds = sortedRanking.map((r) => r['candidate_id'] as String).toSet();
+      final missingItems = _allItems.where((item) => !rankedIds.contains(item.id)).toList();
+
       setState(() {
         _selectedItems = sortedRanking
             .map((r) => itemMap[r['candidate_id'] as String])
             .whereType<ItemModel>()
             .toList();
+        _selectedItems.addAll(missingItems);
         _hasPreviousRanking = true;
       });
     } else {
